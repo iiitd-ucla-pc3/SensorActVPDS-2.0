@@ -1,0 +1,87 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+
+GET     /                                       Application.index
+POST    /                                       Application.index
+
+GET     /repo/info                              Application.repoInfo
+
+# POST    /user/register                          Application.userRegister
+POST    /user/login                             Application.userLogin
+POST    /user/generate/repokey                  Application.userGenerateRepokey
+POST    /user/list                              Application.userList
+
+POST    /key/generate                           Application.keyGenerate
+POST    /key/delete                             Application.keyDelete
+POST    /key/list                               Application.keyList
+POST    /key/enable                             Application.keyEnable
+POST    /key/disable                            Application.keyDisable
+
+POST    /device/add                             Application.deviceAdd
+POST    /device/delete                          Application.deviceDelete
+POST    /device/get                             Application.deviceGet
+POST    /device/list                            Application.deviceList
+POST    /device/share                           Application.deviceShare
+POST    /device/search                          Application.deviceSearch
+
+POST    /device/actuate                         Application.deviceActuate
+POST    /device/presenceactuate                 Application.presenceActuate
+POST	/device/actuationrequest/list			Application.deviceListActuationRequest
+POST	/device/actuationrequest/cancel			Application.deviceCancelActuationRequest
+
+POST    /device/template/add                    Application.deviceTemplateAdd
+POST    /device/template/delete                 Application.deviceTemplateDelete
+POST    /device/template/get                    Application.deviceTemplateGet
+POST    /device/template/list                   Application.deviceTemplateList
+POST    /device/template/public/list            Application.deviceTemplateGlobalList
+
+POST    /guardrule/add                          Application.guardRuleAdd
+POST    /guardrule/delete                       Application.guardRuleDelete
+POST    /guardrule/get                          Application.guardRuleGet
+POST    /guardrule/list                         Application.guardRuleList
+POST    /guardrule/association/add              Application.guardRuleAssociationAdd
+POST    /guardrule/association/delete           Application.guardRuleAssociationDelete
+POST    /guardrule/association/get              Application.guardRuleAssociationGet
+POST    /guardrule/association/list             Application.guardRuleAssociationList
+
+POST    /tasklet/add                            Application.taskletAdd     
+POST    /tasklet/delete                         Application.taskletDelete
+POST    /tasklet/get                            Application.taskletGet
+POST    /tasklet/list                           Application.taskletList
+POST    /tasklet/execute                        Application.taskletExecute
+POST    /tasklet/status                         Application.taskletStatus
+POST    /tasklet/cancel                         Application.taskletCancel
+        
+POST    /data/query                             Application.dataQuery
+POST    /upload/wavesegment                     Application.dataUploadWaveSegment
+POST    /data/upload/wavesegment                Application.dataUploadWaveSegment
+
+POST    /upload/wavesegmentv2                   Application.dataUploadWaveSegmentV2
+
+PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}  Application.putDeviceData
+PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor} Application.putDeviceSensorData
+PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>channel} Application.putDeviceSensorChannelData
+
+PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>channel}/{<[0-9]{13,14}>time}/{<[0-9]{1,10}>value} Application.putDeviceSensorChannelData
+
+GET     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>channel} Application.getDeviceSensorChannelData
+
+GET     /test                               Application.test
+
+# /{<[0-9.-+]{1,10}>value}
+
+# for test
+*       /test                                   Application.test
+
+# Ignore favicon requests
+GET     /favicon.ico                            404
+
+# Map static resources from the /app/public folder to the /public path
+GET     /public/                                staticDir:public
+# GET     /doc/                                   staticDir:doc
+
+# Catch all
+*       /{controller}/{action}                  {controller}.{action}

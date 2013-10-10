@@ -1,0 +1,6 @@
+# Application dependencies
+
+require:
+    - play
+#    - play -> morphia 1.2.6a
+    - play -> router head
