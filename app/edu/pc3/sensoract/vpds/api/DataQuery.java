@@ -45,21 +45,14 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.persistence.TypedQuery;
-
-import controllers.Bootstrap;
-
 import play.Play;
-import play.db.jpa.JPA;
 import edu.pc3.sensoract.vpds.api.request.DataQueryFormat;
-import edu.pc3.sensoract.vpds.api.response.WaveSegmentRFormat;
 import edu.pc3.sensoract.vpds.constants.Const;
 import edu.pc3.sensoract.vpds.enums.ErrorType;
 import edu.pc3.sensoract.vpds.exceptions.InvalidJsonException;
 import edu.pc3.sensoract.vpds.guardrule.GuardRuleManager;
 import edu.pc3.sensoract.vpds.guardrule.RequestingUser;
 import edu.pc3.sensoract.vpds.model.WaveSegmentModel;
-import edu.pc3.sensoract.vpds.model.rdbms.WaveSegmentChannelRModel;
 import edu.pc3.sensoract.vpds.util.SensorActLogger;
 
 /**
@@ -148,6 +141,7 @@ public class DataQuery extends SensorActAPI {
 		// response.SendJSON(outList.toString());
 	}
 
+	/*
 	@SuppressWarnings("unused")
 	private void executeRQuery(final DataQueryFormat queryObj) {
 
@@ -227,6 +221,8 @@ public class DataQuery extends SensorActAPI {
 		response.sendJSON(wsf);
 	}
 
+	*/
+	
 	// modified data/query which pass through guard rule engine
 	private void readData(final DataQueryFormat query) {
 

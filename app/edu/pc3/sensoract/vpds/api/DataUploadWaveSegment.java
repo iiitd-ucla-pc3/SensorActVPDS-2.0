@@ -40,24 +40,27 @@
  */
 package edu.pc3.sensoract.vpds.api;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Observer;
+import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 
 import play.Play;
-import play.data.validation.Error;
+import play.libs.WS;
+import play.libs.WS.HttpResponse;
+import play.libs.WS.WSRequest;
 import edu.pc3.sensoract.vpds.api.request.WaveSegmentFormat;
 import edu.pc3.sensoract.vpds.constants.Const;
 import edu.pc3.sensoract.vpds.enums.ErrorType;
 import edu.pc3.sensoract.vpds.exceptions.InvalidJsonException;
+import edu.pc3.sensoract.vpds.model.DBDatapoint;
 import edu.pc3.sensoract.vpds.model.WaveSegmentModel;
-import edu.pc3.sensoract.vpds.model.rdbms.WaveSegmentRModel;
-import edu.pc3.sensoract.vpds.tasklet.DeviceEvent;
-import edu.pc3.sensoract.vpds.tasklet.DeviceEventListener;
-import edu.pc3.sensoract.vpds.util.SensorActLogger;
+import edu.ucla.nesl.sensorsafe.db.StreamDatabaseDriver;
+import edu.ucla.nesl.sensorsafe.informix.InformixStreamDatabaseDriver;
+import edu.ucla.nesl.sensorsafe.model.Channel;
+import edu.ucla.nesl.sensorsafe.model.Stream;
 
 /**
  * data/upload/wavesegment API: Uploads the wave segments sent by a device to
@@ -74,6 +77,20 @@ public class DataUploadWaveSegment extends SensorActAPI {
 
 	private HashMap<String, ArrayList<WaveSegmentFormat>> hashmapWaveSegments = new HashMap<String, ArrayList<WaveSegmentFormat>>();
 
+	public static StreamDatabaseDriver streamDb;
+	
+	static {
+		streamDb = InformixStreamDatabaseDriver.getInstance();
+		try {
+			System.out.println("connecting to Ifx.....");
+			streamDb.connect();
+			System.out.println("connecting to Ifx..... Success");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	
 	public DataUploadWaveSegment() {
 		super();
 	}
@@ -155,17 +172,43 @@ public class DataUploadWaveSegment extends SensorActAPI {
 	private void verifyWaveSegment(final WaveSegmentFormat waveSegment) {
 		
 		String secretkey = Play.configuration
-				.getProperty(Const.OWNER_UPLOADKEY);
+				.getProperty(Const.OWNER_OWNERKEY);
 
+		//System.out.println("owner key " + secretkey);
 		if (!secretkey.equals(waveSegment.secretkey)) {
-			response.sendFailure(Const.API_DATA_UPLOAD_WAVESEGMENT,
-					ErrorType.UNREGISTERED_SECRETKEY, waveSegment.secretkey);
+		//	response.sendFailure(Const.API_DATA_UPLOAD_WAVESEGMENT,
+			//		ErrorType.UNREGISTERED_SECRETKEY, waveSegment.secretkey);
 
 		}
 		
 		// TODO: verifty the device parameters
 	}
+	
+	public void sendtoAnother(final WaveSegmentFormat waveSegment) {		
+		try {
+			String url="http://128.97.93.31:9000/data/upload/wavesegment";
+			String ws = json.toJson(waveSegment);		
+			WSRequest wsr = WS.url(url).body(ws).timeout("10min");		
+			HttpResponse trainRes = wsr.post();			
+		} catch (Exception e) {
+			uploadLog.info("sendtoAnother.. " + e.getMessage());
+		}
+	}
 
+	public static int stream_id = 10;
+	
+	public void createDatastream(final String datastream, String ch) {
+		
+		List<Channel> chList  = new ArrayList<Channel>();		
+		chList.add(new Channel(ch, "float"));
+		Stream st = new Stream(stream_id,datastream, "tags", chList);		
+		try {
+			streamDb.createStream(st);
+			stream_id++;
+		} catch(Exception e) {
+			System.out.println(e.getMessage());
+		}
+	}
 	/**
 	 * Store the wave segment to the repository.
 	 * 
@@ -176,10 +219,48 @@ public class DataUploadWaveSegment extends SensorActAPI {
 
 		// WaveSegmentRModel ws = new WaveSegmentRModel(waveSegment);
 		// ws.save();
-
+		
+		//sendtoAnother(waveSegment);
+		
 		WaveSegmentModel waveSegmentModel = new WaveSegmentModel(waveSegment);
 		waveSegmentModel.save();
-
+		
+		String username = null;
+		if (userProfile.isRegisteredSecretkey(waveSegment.secretkey)) {
+			username = userProfile.getUsername(waveSegment.secretkey);
+		}
+		
+		String device = waveSegment.data.dname;
+		String sensor = waveSegment.data.sname;
+		long timestamp = waveSegment.data.timestamp;
+		
+		//System.out.println(timestamp);		
+		if((timestamp+"").length() == 10) {
+			timestamp = timestamp * 1000;
+		}		
+		//System.out.println(timestamp);
+		
+		for(WaveSegmentFormat.Channels ch : waveSegment.data.channels) {			
+			for(Double d : ch.readings) {
+				
+				DBDatapoint.save(username, device, sensor, ch.cname, timestamp, d.toString());				
+				String datastreamName = DBDatapoint.getCollectionName(username, device, sensor, ch.cname);
+				
+				Timestamp ts = new Timestamp(timestamp);				
+				try {
+					//System.out.println("adding to ds " + datastreamName);
+					streamDb.addTuple(datastreamName, ts.toString(), d.toString());
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					System.out.println(e.getMessage());					
+					if(e.getMessage().contains("does not exists")) {
+						System.out.println("Creating datastream " + datastreamName);
+						createDatastream(datastreamName, ch.cname);						
+					}
+				}
+			}
+		}
+		
 		// System.out.println(System.currentTimeMillis()/1000 + " "
 		// + waveSegment.data.sid + " notifing... " +
 		// waveSegment.data.timestamp);
@@ -277,12 +358,13 @@ public class DataUploadWaveSegment extends SensorActAPI {
 			
 			validateWaveSegment(newWaveSegment);
 			verifyWaveSegment(newWaveSegment);
-			//long t2 = new java.util.Date().getTime();
-			
+			//long t2 = new java.util.Date().getTime();			
 			
 			// userProfile.checkRegisteredSecretkey(newWaveSegment.secretkey,
 			// Const.API_UPLOAD_WAVESEGMENT);
+						
 			persistWaveSegment(newWaveSegment);
+			//DBDatapoint.saveWS(newWaveSegment);
 			
 			//long t3 = new java.util.Date().getTime();
 			

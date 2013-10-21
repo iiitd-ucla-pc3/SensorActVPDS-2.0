@@ -40,33 +40,15 @@
  */
 package edu.pc3.sensoract.vpds.api;
 
-import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Observer;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 import org.joda.time.DateTime;
 
-import com.google.gson.GsonBuilder;
-import com.mongodb.Mongo;
-
-import play.Play;
-import play.data.validation.Error;
-import play.db.DB;
-import play.db.jpa.JPA;
-import edu.pc3.sensoract.vpds.api.request.WaveSegmentFormat;
 import edu.pc3.sensoract.vpds.constants.Const;
 import edu.pc3.sensoract.vpds.enums.ErrorType;
 import edu.pc3.sensoract.vpds.exceptions.InvalidJsonException;
 import edu.pc3.sensoract.vpds.model.Datapoint;
-import edu.pc3.sensoract.vpds.model.WaveSegmentModel;
-import edu.pc3.sensoract.vpds.model.rdbms.WaveSegmentRModel;
-import edu.pc3.sensoract.vpds.tasklet.DeviceEvent;
-import edu.pc3.sensoract.vpds.tasklet.DeviceEventListener;
-import edu.pc3.sensoract.vpds.util.SensorActLogger;
 
 /**
  * data/upload/wavesegment API: Uploads the wave segments sent by a device to

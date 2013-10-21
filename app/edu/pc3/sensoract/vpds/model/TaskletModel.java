@@ -48,7 +48,6 @@ import play.modules.morphia.Model;
 import com.google.code.morphia.annotations.Entity;
 
 import edu.pc3.sensoract.vpds.api.request.TaskletAddFormat;
-import edu.pc3.sensoract.vpds.model.rdbms.TaskletRModel;
 
 /**
  * Model class for tasklet script management.
@@ -90,31 +89,6 @@ public class TaskletModel extends Model {
 		email = tasklet.email;
 
 		when = tasklet.when;
-		execute = tasklet.execute;
-
-		tasklet_type = tasklet.tasklet_type;
-	}
-
-	public TaskletModel(final TaskletRModel tasklet) {
-
-		if (null == tasklet) {
-			return;
-		}
-		secretkey = tasklet.secretkey;
-		taskletname = tasklet.taskletname;
-		desc = tasklet.description;
-
-		param = tasklet.param;
-		input = tasklet.input;
-
-		if(tasklet.email != null ) {
-			email = new HashMap<String,NotifyEmailModel>();
-			for(String key:tasklet.email.keySet()){
-				email.put(key, new NotifyEmailModel(tasklet.email.get(key)));
-			}
-		}
-
-		when = tasklet.when_;
 		execute = tasklet.execute;
 
 		tasklet_type = tasklet.tasklet_type;

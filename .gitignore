@@ -4,3 +4,9 @@
 *.jar
 *.war
 *.ear
+
+tmp/
+logs/
+precompiled/
+eclipse/
+

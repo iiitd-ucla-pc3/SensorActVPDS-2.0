@@ -52,10 +52,6 @@ import edu.pc3.sensoract.vpds.model.DeviceModel;
 import edu.pc3.sensoract.vpds.model.DeviceProfileModel;
 import edu.pc3.sensoract.vpds.model.DeviceSensorModel;
 import edu.pc3.sensoract.vpds.model.DeviceTemplateModel;
-import edu.pc3.sensoract.vpds.model.rdbms.DeviceActuatorRModel;
-import edu.pc3.sensoract.vpds.model.rdbms.DeviceChannelRModel;
-import edu.pc3.sensoract.vpds.model.rdbms.DeviceRModel;
-import edu.pc3.sensoract.vpds.model.rdbms.DeviceSensorRModel;
 
 /**
  * Defines the response format for device/list API.
@@ -112,46 +108,5 @@ public class DeviceProfileFormat extends DeviceFormat {
 			}
 		}
 
-	}
-
-
-	public DeviceProfileFormat(DeviceRModel device) {
-		devicename = device.devicename;
-		templatename = device.templatename;
-		isglobal = device.isglobal;
-		IP = device.IP;
-		location = device.location;
-		tags = device.tags;
-		latitude = device.latitude;
-		longitude = device.longitude;
-
-		if (device.sensors != null) {
-			sensors = new ArrayList<DeviceSensor>();
-			for (DeviceSensorRModel s : device.sensors) {
-				DeviceSensor ds = new DeviceSensor();
-				ds.name = s.name;
-				ds.sid = Integer.parseInt(s.sid);
-				ds.channels = new ArrayList<DeviceChannel>();
-				for (DeviceChannelRModel c : s.channels) {
-					DeviceChannel dc = new DeviceChannel();
-					dc.name = c.name;
-					dc.type = c.type;
-					dc.unit = c.unit;
-					dc.samplingperiod = c.samplingperiod;
-					ds.channels.add(dc);
-				}
-				sensors.add(ds);
-			}
-		}
-
-		if (device.actuators != null) {
-			actuators = new ArrayList<DeviceActuator>();
-			for (DeviceActuatorRModel a : device.actuators) {
-				DeviceActuator da = new DeviceActuator();
-				da.name = a.name;
-				da.aid = a.aid;
-				actuators.add(da);
-			}
-		}
 	}
 }

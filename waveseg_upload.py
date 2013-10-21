@@ -1,12 +1,13 @@
 import json,urllib,urllib2,subprocess,time,csv,sys,random
 
+url="http://128.97.93.31:9000/data/upload/wavesegment"
 #url="http://localhost:9000/data/upload/wavesegment"
-url="http://localhost:9000/upload/wavesegmentv2"
+#url="http://localhost:9000/upload/wavesegmentv2"
 #url="http://sensoract-vpds.appspot.com/ws/upload"
 #url="http://192.168.17.11:9000/data/upload/wavesegment"
 
 obj={}
-obj["secretkey"]="0aa8cc954df749419bed8584c80e6617"
+obj["secretkey"]="b3949a1d93444cd2921e3680eb0fe39d"
 obj["data"]={}
 obj["data"]["dname"]="Test_Device1"
 obj["data"]["sname"]="Temperature"
@@ -49,5 +50,5 @@ while 1:
 #	if (count == 1):
 #		exit();
 		
-#	time.sleep(10)	
+	time.sleep(10)	
 

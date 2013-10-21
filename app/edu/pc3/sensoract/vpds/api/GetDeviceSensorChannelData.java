@@ -66,7 +66,6 @@ import edu.pc3.sensoract.vpds.enums.ErrorType;
 import edu.pc3.sensoract.vpds.exceptions.InvalidJsonException;
 import edu.pc3.sensoract.vpds.model.Datapoint;
 import edu.pc3.sensoract.vpds.model.WaveSegmentModel;
-import edu.pc3.sensoract.vpds.model.rdbms.WaveSegmentRModel;
 import edu.pc3.sensoract.vpds.tasklet.DeviceEvent;
 import edu.pc3.sensoract.vpds.tasklet.DeviceEventListener;
 import edu.pc3.sensoract.vpds.util.SensorActLogger;
@@ -180,11 +179,11 @@ public class GetDeviceSensorChannelData extends SensorActAPI {
 			value = Double.parseDouble(dp.getValue());
 			stat.addValue(value);
 		}
-
+		
 		// get the last data point
 		Datapoint newDataPoint = dataPointList.get(dataPointList.size() - 1);
 		newDataPoint.setValue(null);
-
+		
 		for (String function : functions) {
 			switch (function.toUpperCase()) {
 			case SUM:

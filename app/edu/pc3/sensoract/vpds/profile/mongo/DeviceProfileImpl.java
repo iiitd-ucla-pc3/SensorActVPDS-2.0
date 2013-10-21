@@ -45,13 +45,18 @@ import java.util.Iterator;
 import java.util.List;
 
 import play.modules.morphia.Model.MorphiaQuery;
+import edu.pc3.sensoract.vpds.api.DataUploadWaveSegment;
+import edu.pc3.sensoract.vpds.api.SensorActAPI;
 import edu.pc3.sensoract.vpds.api.request.DeviceAddFormat;
 import edu.pc3.sensoract.vpds.api.response.DeviceListResponseFormat;
 import edu.pc3.sensoract.vpds.api.response.DeviceProfileFormat;
+import edu.pc3.sensoract.vpds.model.DBDatapoint;
 import edu.pc3.sensoract.vpds.model.DeviceModel;
 import edu.pc3.sensoract.vpds.model.DeviceProfileModel;
 import edu.pc3.sensoract.vpds.model.DeviceTemplateModel;
 import edu.pc3.sensoract.vpds.profile.DeviceProfile;
+import edu.ucla.nesl.sensorsafe.model.Channel;
+import edu.ucla.nesl.sensorsafe.model.Stream;
 
 /**
  * Device profile management, provides methods for managing devices and device
@@ -62,6 +67,39 @@ import edu.pc3.sensoract.vpds.profile.DeviceProfile;
  */
 public class DeviceProfileImpl implements DeviceProfile {
 
+	
+	public boolean createDatastream(final DeviceAddFormat newDevice) {
+		
+		String username = null;
+		if (SensorActAPI.userProfile.isRegisteredSecretkey(newDevice.secretkey)) {
+			username = SensorActAPI.userProfile.getUsername(newDevice.secretkey);
+		}
+		
+		String device = newDevice.deviceprofile.devicename;
+		
+		
+		for(DeviceAddFormat.DeviceSensor sensor: newDevice.deviceprofile.sensors) {			
+			for(DeviceAddFormat.DeviceChannel channel: sensor.channels) {				
+				
+				String datastreamName = DBDatapoint.getCollectionName(username, device, sensor.name, channel.name);				
+				List<Channel> chList  = new ArrayList<Channel>();		
+				chList.add(new Channel("ch1", "float"));
+				
+				System.out.println("Creating datastream " + datastreamName);
+				Stream st = new Stream(1, datastreamName, "tags", chList);
+				try {
+					DataUploadWaveSegment.streamDb.createStream(st);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		return true;
+	}
+
+	
 	/**
 	 * Adds a new device to the repository.
 	 * 
@@ -73,6 +111,7 @@ public class DeviceProfileImpl implements DeviceProfile {
 	public boolean addDevice(final DeviceAddFormat newDevice) {
 		DeviceModel device = new DeviceModel(newDevice);
 		device.save();
+		createDatastream(newDevice);
 		return true;
 	}
 

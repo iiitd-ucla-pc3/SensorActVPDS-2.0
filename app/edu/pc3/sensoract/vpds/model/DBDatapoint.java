@@ -63,6 +63,7 @@ import com.mongodb.MongoException;
 import com.mongodb.QueryBuilder;
 
 import edu.pc3.sensoract.vpds.api.SensorActAPI;
+import edu.pc3.sensoract.vpds.api.request.WaveSegmentFormat;
 
 public class DBDatapoint {
 
@@ -89,18 +90,46 @@ public class DBDatapoint {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		// Get the database object
 		return mongo.getDB("sensoract");
 	}
 
 	private static DBCollection getCollection(String device, String sensor,
 			String channel) {
+		
 		String name = device.concat("_").concat(sensor).concat("_")
 				.concat(channel);
 
 		// TODO: ??
 		return Datapoint.db().getCollection(name);
+		
+	}
+
+	public static String getCollectionName(String username, String device, String sensor,
+			String channel) {
+		
+		String delim = "__";
+		
+		String collectionName = username.concat(delim).concat(device).concat(delim)
+				.concat(sensor).concat(delim).concat(channel);
+
+		return collectionName;
+	}
+	
+	private static DBCollection getCollection(String username, String device, String sensor,
+			String channel, long epoch) {
+		
+		String delim = "__";
+		
+		DateTime dt = new DateTime(epoch);	
+		String month = String.format("%02d%04d", dt.getMonthOfYear(), dt.getYear());
+		
+		String collectionName = username.concat(delim).concat(device).concat(delim)
+				.concat(sensor).concat(delim).concat(channel).concat(delim).concat(month);
+		
+		//System.out.println("Collection name " + collectionName );
+		// TODO: ??
+		return Datapoint.db().getCollection(collectionName);
 	}
 
 	public DBDatapoint() {
@@ -112,7 +141,7 @@ public class DBDatapoint {
 	}
 
 	private static DBObject getQuery(long start, long end) {
-		return new QueryBuilder().put("epoch").greaterThanEquals(start)
+		return new QueryBuilder().put("_id").greaterThanEquals(start)
 				.lessThanEquals(end).get();
 	}
 
@@ -121,7 +150,7 @@ public class DBDatapoint {
 		long epoch;
 		String value;
 
-		Object o = obj.get("epoch");
+		Object o = obj.get("_id");
 		if (o != null) {
 			epoch = Long.parseLong(o.toString());
 		} else
@@ -146,14 +175,26 @@ public class DBDatapoint {
 	}
 
 	private static DBObject getDBObject(long epoch, String value) {
-		return BasicDBObjectBuilder.start().add("epoch", epoch)
+		return BasicDBObjectBuilder.start().add("_id", epoch)
 				.add("value", value).get();
 	}
 
-	public static boolean save(String device, String sensor, String channel,
-			long epoch, String value) {
-		DBCollection col = getCollection(device, sensor, channel);
+	public static boolean save(DBCollection col, long epoch, String value) {
+		
 		col.save(getDBObject(epoch, value));
+		//DBObject dbo = BasicDBObjectBuilder.start().add("_id", epoch).get();		
+		//col.update(dbo, getDBObject(epoch, value), true, false);
+		return true;
+	}
+
+	
+	public static boolean save(String username, String device, String sensor, String channel,
+			long epoch, String value) {
+		DBCollection col = getCollection(username, device, sensor, channel, epoch);		
+		col.save(getDBObject(epoch, value));		
+		
+		//DBObject dbo = BasicDBObjectBuilder.start().add("_id", epoch).get();		
+		//col.update(dbo, getDBObject(epoch, value), true, false);
 		return true;
 	}
 
@@ -171,13 +212,13 @@ public class DBDatapoint {
 	public static boolean createIndex(String device, String sensor,
 			String channel) {
 		DBCollection col = getCollection(device, sensor, channel);
-		col.createIndex(new BasicDBObject("epoch", -1));
+		col.createIndex(new BasicDBObject("_id", -1));
 		return true;
 	}
 
 	public static boolean reIndex(String device, String sensor, String channel) {
 		DBCollection col = getCollection(device, sensor, channel);
-		col.ensureIndex(new BasicDBObject("epoch", -1));
+		col.ensureIndex(new BasicDBObject("_id", -1));
 		return true;
 	}
 
@@ -210,12 +251,24 @@ public class DBDatapoint {
 		
 		return listDP;
 	}
-
+	
+	public static void saveWS(WaveSegmentFormat ws, String username) {
+		
+		long ts = ws.data.timestamp;
+	
+		// convert epoch seconds to epoch millis
+		if(ts+"".length() == 10) {
+			ts = ts * 1000;
+		}
+		
+		
+	}
+	
 	public void push(long t, String v) {
 		for (int d = 0; d < 2; ++d) {
 			for (int s = 0; s < 2; ++s) {
 				for (int c = 0; c < 2; ++c) {
-					DBDatapoint.save("d" + d, "s" + s, "c" + c, t, v);
+					DBDatapoint.save("u", "d" + d, "s" + s, "c" + c, t, v);
 				}
 			}
 		}
@@ -266,7 +319,7 @@ public class DBDatapoint {
 		}
 
 	}
-
+	
 	public void drop() {
 		for (int d = 0; d < 2; ++d) {
 			for (int s = 0; s < 2; ++s) {
