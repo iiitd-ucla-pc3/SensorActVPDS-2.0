@@ -180,7 +180,6 @@ public class DBDatapoint {
 	}
 
 	public static boolean save(DBCollection col, long epoch, String value) {
-		
 		col.save(getDBObject(epoch, value));
 		//DBObject dbo = BasicDBObjectBuilder.start().add("_id", epoch).get();		
 		//col.update(dbo, getDBObject(epoch, value), true, false);
@@ -262,7 +261,7 @@ public class DBDatapoint {
 		// System.out.println(collection.getFullName());
 		// System.out.println(query.toString());
 
-		System.out.println("\n" + new Date() + "   Querying.. ");
+		//System.out.println("\n" + new Date() + "   Querying.. ");
 
 		DBCursor cursor = collection.find(query);
 
@@ -271,13 +270,13 @@ public class DBDatapoint {
 
 		List<DBDatapoint> listDP = new ArrayList<DBDatapoint>();
 		List<DBObject> listObj = cursor.toArray();		
-		System.out.println(new Date() + "   done " + listObj.size());
+		//System.out.println(new Date() + "   done " + listObj.size());
 		
 		for (DBObject dbo : listObj) {
 			listDP.add(toDBDatapoint(dbo));
 		}
 		
-		System.out.println(new Date() + "   Converted..." + listObj.size());
+		//System.out.println(new Date() + "   Converted..." + listObj.size());
 		
 		return listDP;
 	}

@@ -89,7 +89,8 @@ public class DeviceProfileImpl implements DeviceProfile {
 					DataArchiever.streamDb.createStream(st);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					System.out.println(e.getMessage());
+					//e.printStackTrace();
 				}
 			}
 		}

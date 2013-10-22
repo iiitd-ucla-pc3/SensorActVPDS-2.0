@@ -48,7 +48,7 @@ public class DataArchiever {
 		Timestamp ts = new Timestamp(timestamp);
 		try {
 			// System.out.println("adding to ds " + datastreamName);
-			streamDb.addTuple(datastreamName, ts.toString(), value);
+			//streamDb.addTuple(datastreamName, ts.toString(), value);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			System.out.println(e.getMessage());

@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.quartz.JobExecutionContext;
@@ -61,6 +62,7 @@ import edu.pc3.sensoract.vpds.guardrule.GuardRuleManager;
 import edu.pc3.sensoract.vpds.guardrule.RequestingUser;
 import edu.pc3.sensoract.vpds.model.WaveSegmentChannelModel;
 import edu.pc3.sensoract.vpds.model.WaveSegmentModel;
+import edu.pc3.sensoract.vpds.util.JsonUtil;
 import edu.pc3.sensoract.vpds.util.SensorActLogger;
 
 public class LuaToJavaFunctionMapper {
@@ -121,6 +123,18 @@ public class LuaToJavaFunctionMapper {
 		// System.out.println("after notifyEmail..." + new Date().getTime());
 	}
 
+	public void sendTestEmail(String msg) {
+
+		Email email = new Email("pandarasamya@iiitd.ac.in", "Tasklet notification : "+msg, msg);
+		long t1 = new Date().getTime();
+		System.out.println("before notifyEmail..." + new Date().getTime());
+		email.sendNow(jobContext);
+		long t2 = new Date().getTime();
+		System.out.print(" notifyEmail :" + (t2-t1));
+		System.out.println("after notifyEmail..." + new Date().getTime());
+	}
+
+	
 	Map toMap(QueryDataOutputFormat data) {
 
 		if (null == data || null == data.datapoints)
@@ -152,8 +166,7 @@ public class LuaToJavaFunctionMapper {
 			dd.sensor = tokenizer.nextToken();
 			dd.channel = tokenizer.nextToken();
 		} catch (Exception e) {
-		}
-		
+		}		
 		return dd;
 	}
 
@@ -177,57 +190,85 @@ public class LuaToJavaFunctionMapper {
 		return toMap(data);
 	}
 
-	public Double readAvg(String resource, int nSeconds) {
+	public double compute(QueryDataOutputFormat data, String function) {
 
+		if( data == null || data.datapoints == null) {
+			return Double.NaN;
+		}
+		
+		DescriptiveStatistics stat = new DescriptiveStatistics();		
+		
+		for (QueryDataOutputFormat.Datapoint dp : data.datapoints) {			
+			stat.addValue(Double.parseDouble(dp.value));
+		}
+		
+		if(stat.getN() == 0 ) {
+			return Double.NaN;
+		}
+		
+		if(function.equalsIgnoreCase("SUM")) {
+			return stat.getSum();
+		} else if(function.equalsIgnoreCase("MEAN")) {
+			return stat.getMean();
+		}else if(function.equalsIgnoreCase("MIN")) {
+			return stat.getMin();
+		}else if(function.equalsIgnoreCase("MAX")) {
+			return stat.getMax();
+		}else if(function.equalsIgnoreCase("COUNT")) {
+			return stat.getN();
+		} else {
+			return Double.NaN;
+		}		
+	}
+	
+	public Double read(String resource, int nSeconds, String function) {
+		
+		//System.out.println(resource + nSeconds);
+		
 		DeviceInfo device = toDeviceInfo(resource);
+		String secretkey = null;
 		
-		String secretkey = SensorActAPI.userProfile.getSecretkey(device.username);
-		
-		//device.username = SensorActAPI.userProfile.getOwnername();
+		try {
+				//System.out.println("after.......................");
+				secretkey = SensorActAPI.userProfile.getSecretkey(device.username);
+				
+				//System.out.println( device.username + "  " + secretkey);
+				
+				if(secretkey == null) 
+					return (double)0;
+			
+				
+			//device.username = SensorActAPI.userProfile.getOwnername();
+	
+			//String email = SensorActAPI.userProfile.getEmail(SensorActAPI.userProfile.getOwnername());
+			//RequestingUser requestingUser = new RequestingUser(email);
+	
+			//long timeNow = new Date().getTime()/1000;		
+			//List<WaveSegmentModel> wsList = GuardRuleManager.read(device.username,
+				//	requestingUser, device.device, device.sensor, device.sensorid, timeNow-(nMins*60), timeNow);
+	
+			//if (null == wsList)
+				//return null;
+			
+			//long timeNow = new Date().getTime();
+			long timeNow = DateTime.now(DateTimeZone.UTC).getMillis();
+			
+			QueryDataOutputFormat data = DataQueryV2.readDataNew(secretkey, device.device, 
+					device.sensor, device.channel, 
+					timeNow-nSeconds*1000, timeNow, null);
 
-		//String email = SensorActAPI.userProfile.getEmail(SensorActAPI.userProfile.getOwnername());
-		//RequestingUser requestingUser = new RequestingUser(email);
-
-		//long timeNow = new Date().getTime()/1000;		
-		//List<WaveSegmentModel> wsList = GuardRuleManager.read(device.username,
-			//	requestingUser, device.device, device.sensor, device.sensorid, timeNow-(nMins*60), timeNow);
-
-		//if (null == wsList)
-			//return null;
-		
-		//long timeNow = new Date().getTime();
-		long timeNow = DateTime.now(DateTimeZone.UTC).getMillis();
-		
-		QueryDataOutputFormat data = DataQueryV2.readDataNew(secretkey, device.device, 
-				device.sensor, device.channel, 
-				timeNow-nSeconds*1000, timeNow, null);
-
-		
-		/*
-		DescriptiveStatistics stat = new DescriptiveStatistics();
-		stat.addValue(0);
-		
-		for (WaveSegmentModel ws : wsList) {
-			for (WaveSegmentChannelModel ch : ws.data.channels) {
-				for (Double d : ch.readings) {
-					stat.addValue(d);			
-				}
-			}
+			double val = compute(data, function);
+			
+			//System.out.println("Sending email.. ");
+			//sendTestEmail("Average is " + (sum/count));			
+			//System.out.println("Returning.. " + val);
+			return val;
+			
+		} catch(Exception e) {
+			System.out.println(e.getLocalizedMessage());
 		}
 		
-		//System.out.println("readings mean is " + stat.getMean());
-		
-		return stat.getMean();
-		*/
-
-		double sum = 0;
-		int count = 0;
-		
-		for (QueryDataOutputFormat.Datapoint dp : data.datapoints) {
-			sum += Double.parseDouble(dp.value);
-		}
-
-		return sum/count;
+		return (double) 0;
 	}
 	
 	public boolean writeData(String resource, double data) {

@@ -43,14 +43,18 @@ package controllers;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.joda.time.DateTime;
 
 import play.mvc.Before;
 import play.mvc.Controller;
 import edu.pc3.sensoract.vpds.api.SensorActAPI;
+import edu.pc3.sensoract.vpds.api.request.TaskletAddFormat;
 import edu.pc3.sensoract.vpds.model.DBDatapoint;
+import edu.pc3.sensoract.vpds.tasklet.Email;
 import edu.ucla.nesl.sensorsafe.db.StreamDatabaseDriver;
 import edu.ucla.nesl.sensorsafe.informix.InformixStreamDatabaseDriver;
 import edu.ucla.nesl.sensorsafe.model.Channel;
@@ -73,6 +77,13 @@ public class Application extends Controller {
 	}
 
 	public static void index() {
+		Email email = new Email("pandarasamya@iiitd.ac.in", "Tasklet notification", "HELLO");
+		long t1 = new Date().getTime();
+		System.out.println("before notifyEmail..." + new Date().getTime());
+		email.sendNow(null);
+		long t2 = new Date().getTime();
+		System.out.print(" notifyEmail :" + (t2-t1));
+		System.out.println("after notifyEmail..." + new Date().getTime());
 		renderText("Welcome to SensorAct!");
 	}
 
@@ -201,6 +212,7 @@ public class Application extends Controller {
 
 	// Task management
 	public static void taskletAdd() {
+		System.out.println(request.params.get("body"));
 		SensorActAPI.taskletAdd.doProcess(request.params.get("body"));
 	}
 
@@ -309,6 +321,7 @@ public class Application extends Controller {
 	}
 
 	public static void deviceActuate() {
+		System.out.println(request.params.get("body"));
 		SensorActAPI.deviceActuate.doProcess(request.params.get("body"));
 	}
 
@@ -417,6 +430,30 @@ public class Application extends Controller {
 
 		System.out.println("..........fetching..");
 		//dbp.fetch(t, t+1000000);
+
+	}
+	
+	public static void computedSensor1() {		
+		TaskletAddFormat t1 = new TaskletAddFormat();
+		
+		t1.taskletname = "computed1";
+		t1.desc = "desc";
+		
+		Map<String,String> param = new HashMap<String,String>();
+		param.put("c1", "nesl_owner:Test_Device1:Temperature:channel1");
+		
+		Map<String,String> input = new HashMap<String,String>();
+		param.put("t1", "[0/5 * 0-23 * *]");
+
+		String script = "print( 'reading ', d1); \n" 
+						+ "dd = VPDS:read(d1) \n"
+						+ "print('its value ', dd )";
+		
+		t1.param = param;
+		t1.input = input;
+		
+		t1.when = "t1";
+		t1.execute = "script";
 
 	}
 }

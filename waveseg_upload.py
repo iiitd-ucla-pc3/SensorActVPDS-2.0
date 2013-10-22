@@ -29,7 +29,8 @@ while 1:
 	readings_core0=[]
 	obj["data"]["timestamp"]=time.time()
 	for x in range(0,1):
-		readings_core0.append(random.randint(20,30))
+#		readings_core0.append(random.randint(20,30))
+		readings_core0.append(1)
 		# time.sleep(1)
 	
 	obj["data"]["channels"][0]["readings"]=readings_core0
@@ -51,5 +52,5 @@ while 1:
 #	if (count == 1):
 #		exit();
 		
-	time.sleep(10)	
+	time.sleep(2)	
 
