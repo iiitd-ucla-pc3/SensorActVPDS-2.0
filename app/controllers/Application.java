@@ -40,7 +40,6 @@
  */
 package controllers;
 
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -48,24 +47,10 @@ import java.util.List;
 
 import org.joda.time.DateTime;
 
-import com.google.code.morphia.Datastore;
-import com.google.code.morphia.DatastoreImpl;
-import com.google.code.morphia.Morphia;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.QueryBuilder;
-import com.mongodb.util.JSON;
-
-import play.modules.morphia.Model;
 import play.mvc.Before;
 import play.mvc.Controller;
-import edu.pc3.sensoract.vpds.api.DataUploadWaveSegmentV2;
 import edu.pc3.sensoract.vpds.api.SensorActAPI;
 import edu.pc3.sensoract.vpds.model.DBDatapoint;
-import edu.pc3.sensoract.vpds.model.Datapoint;
 import edu.ucla.nesl.sensorsafe.db.StreamDatabaseDriver;
 import edu.ucla.nesl.sensorsafe.informix.InformixStreamDatabaseDriver;
 import edu.ucla.nesl.sensorsafe.model.Channel;
@@ -248,12 +233,28 @@ public class Application extends Controller {
 		SensorActAPI.dataQuery.doProcess(request.params.get("body"));
 	}
 
-	public static void dataUploadWaveSegment() {
-		SensorActAPI.dataUploadWaveseg.doProcess(request.params.get("body"));
+	public static void dataQueryV2(String device, String sensor, String channel, 
+			long start, long end, String timeformat) {
+		
+		final String XAPIKEY = "x-apikey";
+		
+		for(String k : request.headers.keySet()) {
+			System.out.println(request.headers.get(k).name);
+		}
+		
+		String secretkey = null;
+		if(request.headers.containsKey(XAPIKEY)) {
+			secretkey =  request.headers.get(XAPIKEY).value();
+		} else {
+			renderText("Unregistered secretkey");
+		}
+		
+		System.out.println("secretkey " + secretkey + " " + start + " " + end);
+		SensorActAPI.dataQueryv2.doProcess(secretkey, device, sensor, channel, start, end, timeformat);
 	}
 
-	public static void dataUploadWaveSegmentV2() {
-		SensorActAPI.dataUploadWavesegV2.doProcess(request.params.get("body"));
+	public static void dataUploadWaveSegment() {
+		SensorActAPI.dataUpload.doProcess(request.params.get("body"));
 	}
 
 	public static void putDeviceData(String device) {
@@ -268,28 +269,27 @@ public class Application extends Controller {
 
 	// TODO: refer play framework cookbook about router head
 	public static void putDeviceSensorChannelData(String device, String sensor,
-			String channel) {
-
-		// renderText("Device " + device + " Sensor "+sensor + " Channel " +
-		// channel);
-		// SensorActAPI.putData.doProcess(request.params.get("body"));
-
-		SensorActAPI.putDeviceSensorChannelData.doProcess(device, sensor,
-				channel, request.params.get("body"));
-
-	}
-
-	public static void putDeviceSensorChannelData(String device, String sensor,
 			String channel, String time, String value) {
 
 		// SensorActAPI.putData.doProcess(request.params.get("body"));
 
-		SensorActAPI.putDeviceSensorChannelData.doProcess(device, sensor,
-				channel, time, value);
+		final String XAPIKEY = "x-apikey";		
+		//for(String k : request.headers.keySet()) {
+			//System.out.println(request.headers.get(k).name);
+		//}
+		
+		String secretkey = null;
+		if(request.headers.containsKey(XAPIKEY)) {
+			secretkey =  request.headers.get(XAPIKEY).value();
+		} else {
+			renderText("Unregistered secretkey");
+		}
 
+		SensorActAPI.dataUpload.doProcess(secretkey, device, sensor, channel, time, value);
+
+		
 		renderText("Device " + device + " Sensor " + sensor + " Channel "
 				+ channel + " time " + time + " value " + value);
-
 	}
 
 	// TODO: refer play framework cookbook about router head

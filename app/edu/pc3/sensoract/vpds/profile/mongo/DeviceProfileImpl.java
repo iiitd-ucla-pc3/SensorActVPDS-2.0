@@ -41,18 +41,16 @@
 package edu.pc3.sensoract.vpds.profile.mongo;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import play.modules.morphia.Model.MorphiaQuery;
-import edu.pc3.sensoract.vpds.api.DataUploadWaveSegment;
+import edu.pc3.sensoract.vpds.api.DataUpload;
 import edu.pc3.sensoract.vpds.api.SensorActAPI;
 import edu.pc3.sensoract.vpds.api.request.DeviceAddFormat;
-import edu.pc3.sensoract.vpds.api.response.DeviceListResponseFormat;
 import edu.pc3.sensoract.vpds.api.response.DeviceProfileFormat;
+import edu.pc3.sensoract.vpds.data.DataArchiever;
 import edu.pc3.sensoract.vpds.model.DBDatapoint;
 import edu.pc3.sensoract.vpds.model.DeviceModel;
-import edu.pc3.sensoract.vpds.model.DeviceProfileModel;
 import edu.pc3.sensoract.vpds.model.DeviceTemplateModel;
 import edu.pc3.sensoract.vpds.profile.DeviceProfile;
 import edu.ucla.nesl.sensorsafe.model.Channel;
@@ -88,7 +86,7 @@ public class DeviceProfileImpl implements DeviceProfile {
 				System.out.println("Creating datastream " + datastreamName);
 				Stream st = new Stream(1, datastreamName, "tags", chList);
 				try {
-					DataUploadWaveSegment.streamDb.createStream(st);
+					DataArchiever.streamDb.createStream(st);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

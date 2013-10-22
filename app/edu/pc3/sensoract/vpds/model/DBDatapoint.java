@@ -251,6 +251,38 @@ public class DBDatapoint {
 		
 		return listDP;
 	}
+
+	public static List<DBDatapoint> fetch(String username, String device, String sensor,
+			String channel, long start, long end) {
+
+		DBCollection collection = getCollection(username, device, sensor, channel, start);		
+
+		DBObject query = getQuery(start, end);
+
+		// System.out.println(collection.getFullName());
+		// System.out.println(query.toString());
+
+		System.out.println("\n" + new Date() + "   Querying.. ");
+
+		DBCursor cursor = collection.find(query);
+
+		// System.out.println("count : " + cursor.count() + " " +
+		// cursor.explain());
+
+		List<DBDatapoint> listDP = new ArrayList<DBDatapoint>();
+		List<DBObject> listObj = cursor.toArray();		
+		System.out.println(new Date() + "   done " + listObj.size());
+		
+		for (DBObject dbo : listObj) {
+			listDP.add(toDBDatapoint(dbo));
+		}
+		
+		System.out.println(new Date() + "   Converted..." + listObj.size());
+		
+		return listDP;
+	}
+
+	
 	
 	public static void saveWS(WaveSegmentFormat ws, String username) {
 		

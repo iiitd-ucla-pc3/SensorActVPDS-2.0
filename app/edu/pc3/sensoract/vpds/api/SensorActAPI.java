@@ -126,9 +126,11 @@ public class SensorActAPI extends Application {
 	public static TaskletStatus taskletStatus = new TaskletStatus();
 	public static TaskletCancel taskletCancel = new TaskletCancel();
 
-	public static DataUploadWaveSegment dataUploadWaveseg = new DataUploadWaveSegment();
-	public static DataUploadWaveSegmentV2 dataUploadWavesegV2 = new DataUploadWaveSegmentV2();
+	//public static DataUploadWaveSegment dataUploadWaveseg = new DataUploadWaveSegment();
+//	public static DataUploadWaveSegmentV2 dataUploadWavesegV2 = new DataUploadWaveSegmentV2();
+	public static DataUpload dataUpload = new DataUpload();	
 	public static DataQuery dataQuery = new DataQuery();
+	public static DataQueryV2 dataQueryv2 = new DataQueryV2();
 	
 	public static PutData putData = new PutData();
 	

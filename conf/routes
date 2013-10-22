@@ -56,18 +56,17 @@ POST    /tasklet/status                         Application.taskletStatus
 POST    /tasklet/cancel                         Application.taskletCancel
         
 POST    /data/query                             Application.dataQuery
+GET     /{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>channel} Application.dataQueryV2
+
 POST    /upload/wavesegment                     Application.dataUploadWaveSegment
 POST    /data/upload/wavesegment                Application.dataUploadWaveSegment
 
-POST    /upload/wavesegmentv2                   Application.dataUploadWaveSegmentV2
+# PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}  Application.putDeviceData
+# PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor} Application.putDeviceSensorData
+PUT     /{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>channel} Application.putDeviceSensorChannelData
+#PUT     /{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>channel}/{<[0-9]{13,14}>time}/{<[0-9]{1,10}>value} Application.putDeviceSensorChannelData
 
-PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}  Application.putDeviceData
-PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor} Application.putDeviceSensorData
-PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>channel} Application.putDeviceSensorChannelData
-
-PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>channel}/{<[0-9]{13,14}>time}/{<[0-9]{1,10}>value} Application.putDeviceSensorChannelData
-
-GET     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>channel} Application.getDeviceSensorChannelData
+#GET     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>channel} Application.getDeviceSensorChannelData
 
 GET     /test                               Application.test
 

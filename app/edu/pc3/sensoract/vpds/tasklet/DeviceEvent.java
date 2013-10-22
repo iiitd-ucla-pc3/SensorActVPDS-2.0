@@ -5,16 +5,13 @@ package edu.pc3.sensoract.vpds.tasklet;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Observable;
-import org.apache.log4j.Logger;
 
+import org.apache.log4j.Logger;
 import org.quartz.JobDetail;
 
-import edu.pc3.sensoract.vpds.api.DataUploadWaveSegment;
 import edu.pc3.sensoract.vpds.api.request.WaveSegmentFormat;
-import edu.pc3.sensoract.vpds.util.SensorActLogger;
 
 /**
  * @author samy
