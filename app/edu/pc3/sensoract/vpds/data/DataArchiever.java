@@ -12,8 +12,8 @@ import edu.ucla.nesl.sensorsafe.model.Stream;
 
 public class DataArchiever {
 
+	/*
 	public static StreamDatabaseDriver streamDb;
-
 	static {
 		streamDb = InformixStreamDatabaseDriver.getInstance();
 		try {
@@ -24,6 +24,8 @@ public class DataArchiever {
 			e.printStackTrace();
 		}
 	}
+	
+	
 	
 	public static int stream_id = 10;
 	public static void createDatastream(final String datastream, String ch) {
@@ -38,15 +40,19 @@ public class DataArchiever {
 		}
 	}
 
+*/
+
 	public static void storeDatapoint(String username, String device,
 			String sensor, String channel, long timestamp, String value) {
 
-		DBDatapoint.save(username, device, sensor, channel, timestamp, value);
 		String datastreamName = DBDatapoint.getCollectionName(username, device,
 				sensor, channel);
 
-		Timestamp ts = new Timestamp(timestamp);
 		try {
+			
+			DBDatapoint.save(username, device, sensor, channel, timestamp, value);			
+			Timestamp ts = new Timestamp(timestamp);
+
 			// System.out.println("adding to ds " + datastreamName);
 			//streamDb.addTuple(datastreamName, ts.toString(), value);
 		} catch (Exception e) {
@@ -54,7 +60,7 @@ public class DataArchiever {
 			System.out.println(e.getMessage());
 			if (e.getMessage().contains("does not exists")) {
 				System.out.println("Creating datastream " + datastreamName);
-				createDatastream(datastreamName, channel);
+				//createDatastream(datastreamName, channel);
 			}
 		}
 	}

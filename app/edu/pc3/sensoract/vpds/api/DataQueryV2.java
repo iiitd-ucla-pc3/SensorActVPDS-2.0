@@ -79,7 +79,7 @@ public class DataQueryV2 extends SensorActAPI {
 	 */
 	private void validateRequest() {
 	}
-	
+
 	// modified data/query which pass through guard rule engine
 	private void readData(final DataQueryFormat query) {
 
@@ -106,7 +106,7 @@ public class DataQueryV2 extends SensorActAPI {
 		}
 
 		RequestingUser requestingUser = new RequestingUser(email);
-		
+
 		long tStart = new Date().getTime();
 
 		List<WaveSegmentModel> wsList = GuardRuleManager.read(ownername,
@@ -114,13 +114,15 @@ public class DataQueryV2 extends SensorActAPI {
 				query.sensorid, query.conditions.fromtime,
 				query.conditions.totime);
 		long tEnd = new Date().getTime();
-		
-		SensorActLogger.info("Data size for " + query.devicename + ":" + 
-					query.sensorname + " is " + wsList.size());
-		SensorActLogger.info("With Guardrules:: Time to retrieve data: " + (tEnd - tStart)/1000 + " seconds");		
+
+		SensorActLogger.info("Data size for " + query.devicename + ":"
+				+ query.sensorname + " is " + wsList.size());
+		SensorActLogger.info("With Guardrules:: Time to retrieve data: "
+				+ (tEnd - tStart) / 1000 + " seconds");
 
 		long t1 = new Date().getTime();
-		// TODO: what the hell is happening here ?? Need to change the output format
+		// TODO: what the hell is happening here ?? Need to change the output
+		// format
 		Iterator<WaveSegmentModel> iteratorData = wsList.iterator();
 		ArrayList<String> outList = new ArrayList<String>();
 
@@ -134,64 +136,69 @@ public class DataQueryV2 extends SensorActAPI {
 			String data = json.toJson(ww);
 			outList.add(data);
 		}
-		
-		long t2 = new Date().getTime();
-		SensorActLogger.info("Iterator Array Addition: " + (t2 - t1)/1000 + " seconds\n\n");
 
+		long t2 = new Date().getTime();
+		SensorActLogger.info("Iterator Array Addition: " + (t2 - t1) / 1000
+				+ " seconds\n\n");
+		
 		// response.SendJSON(of);
 		// System.out.println(outList.toString());
 		renderText("{\"wavesegmentArray\":" + outList.toString() + "}");
-
 	}
 	
-	
 	// modified data/query which pass through guard rule engine
-	public static QueryDataOutputFormat readDataNew(String secretkey, String device, String sensor, 
-			String channel, long start, long end, String timeformat) {
+	public static QueryDataOutputFormat readDataNew(String secretkey,
+			String device, String sensor, String channel, long start, long end,
+			String timeformat) {
 
-		String username = null;
-		username = userProfile.getUsername(secretkey);
-		if (null == username) {
-			response.sendFailure(Const.API_DATA_QUERY,
-			ErrorType.UNREGISTERED_SECRETKEY, secretkey);
-		}
-		
-		if((start+"").length() == 10) {
-			start = start * 1000;
-		}
-		
-		if((end+"").length() == 10) {
-			end = end * 1000;
-		}
-		
-		//TODO: get data through guard rule engine
-		List<DBDatapoint> dataPoints = DBDatapoint.fetch(username, device, 
-				sensor, channel, start, end);
+		try {
 
-		//String datastreamName = DBDatapoint.getCollectionName(username, query.devicename, 
-			//	query.sensorname, query.channelname);
-		
-		QueryDataOutputFormat out = new QueryDataOutputFormat();
-		
-		out.device = device;
-		out.sensor = sensor;
-		out.channel = channel;
-		
-		String time = null;
-		if("ISO8601".equalsIgnoreCase(timeformat)) {
-			for(DBDatapoint dp:dataPoints) {
-				time = new DateTime(dp.epoch,DateTimeZone.UTC).toString();
-				out.datapoints.add(new Datapoint(time, dp.value));
+			String username = null;
+			username = userProfile.getUsername(secretkey);
+			if (null == username) {
+				response.sendFailure(Const.API_DATA_QUERY,
+						ErrorType.UNREGISTERED_SECRETKEY, secretkey);
 			}
-		} else {
-			for(DBDatapoint dp:dataPoints) {
-				time = ""+dp.epoch;
-				out.datapoints.add(new Datapoint(time, dp.value));
+
+			if ((start + "").length() == 10) {
+				start = start * 1000;
 			}
+
+			if ((end + "").length() == 10) {
+				end = end * 1000;
+			}
+
+			// TODO: get data through guard rule engine
+			List<DBDatapoint> dataPoints = DBDatapoint.fetch(username, device,
+					sensor, channel, start, end);
+
+			// String datastreamName = DBDatapoint.getCollectionName(username,
+			// query.devicename,
+			// query.sensorname, query.channelname);
+
+			QueryDataOutputFormat out = new QueryDataOutputFormat();
+
+			out.device = device;
+			out.sensor = sensor;
+			out.channel = channel;
+
+			String time = null;
+			if ("ISO8601".equalsIgnoreCase(timeformat)) {
+				for (DBDatapoint dp : dataPoints) {
+					time = new DateTime(dp.epoch, DateTimeZone.UTC).toString();
+					out.datapoints.add(new Datapoint(time, dp.value));
+				}
+			} else {
+				for (DBDatapoint dp : dataPoints) {
+					time = "" + dp.epoch;
+					out.datapoints.add(new Datapoint(time, dp.value));
+				}
+			}
+
+			return out;
+		} catch (Exception e) {			
+			return null;
 		}
-		
-		return out;
-				
 	}
 
 	// private void sendData(List<WaveSegmentModel> allWaveSegments) {
@@ -204,12 +211,13 @@ public class DataQueryV2 extends SensorActAPI {
 	 * @param queryJson
 	 *            Request query in Json string
 	 */
-	public void doProcess(String secretkey, String device, String sensor, 
+	public void doProcess(String secretkey, String device, String sensor,
 			String channel, long start, long end, String timeformat) {
 
 		try {
 			validateRequest();
-			QueryDataOutputFormat out = readDataNew(secretkey, device, sensor, channel, start, end, timeformat);
+			QueryDataOutputFormat out = readDataNew(secretkey, device, sensor,
+					channel, start, end, timeformat);
 			renderJSON(out);
 		} catch (Exception e) {
 			SensorActLogger.error("Error:" + e.getMessage());

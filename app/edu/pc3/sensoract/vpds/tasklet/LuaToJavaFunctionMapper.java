@@ -41,6 +41,7 @@
 
 package edu.pc3.sensoract.vpds.tasklet;
 
+import java.io.FileReader;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -49,33 +50,37 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Hours;
+import org.joda.time.Minutes;
+import org.joda.time.Period;
 import org.quartz.JobExecutionContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import play.Play;
 import edu.pc3.sensoract.vpds.api.DataQueryV2;
 import edu.pc3.sensoract.vpds.api.SensorActAPI;
 import edu.pc3.sensoract.vpds.api.response.QueryDataOutputFormat;
+import edu.pc3.sensoract.vpds.data.DataArchiever;
 import edu.pc3.sensoract.vpds.guardrule.GuardRuleManager;
 import edu.pc3.sensoract.vpds.guardrule.RequestingUser;
-import edu.pc3.sensoract.vpds.model.WaveSegmentChannelModel;
 import edu.pc3.sensoract.vpds.model.WaveSegmentModel;
-import edu.pc3.sensoract.vpds.util.JsonUtil;
+import edu.pc3.sensoract.vpds.util.Plot;
 import edu.pc3.sensoract.vpds.util.SensorActLogger;
 
 public class LuaToJavaFunctionMapper {
 
-	private static Logger _log = LoggerFactory
-			.getLogger(LuaToJavaFunctionMapper.class);
+	//private static Logger __LOG = LoggerFactory
+		//	.getLogger(LuaToJavaFunctionMapper.class);
+	
+	//public static final Logger LOG = Logger.getLogger("Tasklet");
 
+	public static final Logger LOG = Logger.getLogger(LuaToJavaFunctionMapper.class.getName());
+	
 	private JobExecutionContext jobContext = null;
 //	public static double currentValue = 0;
 
-	LuaToJavaFunctionMapper() {
-	}
-	
 	public LuaToJavaFunctionMapper(JobExecutionContext context) {
 		jobContext = context;
 	}
@@ -125,7 +130,7 @@ public class LuaToJavaFunctionMapper {
 
 	public void sendTestEmail(String msg) {
 
-		Email email = new Email("pandarasamya@iiitd.ac.in", "Tasklet notification : "+msg, msg);
+		Email email = new Email("pandarasamya@iiitd.ac.in", "Tasklet notification : "+msg, msg, null);
 		long t1 = new Date().getTime();
 		System.out.println("before notifyEmail..." + new Date().getTime());
 		email.sendNow(jobContext);
@@ -133,14 +138,13 @@ public class LuaToJavaFunctionMapper {
 		System.out.print(" notifyEmail :" + (t2-t1));
 		System.out.println("after notifyEmail..." + new Date().getTime());
 	}
-
 	
-	Map toMap(QueryDataOutputFormat data) {
+	Map<String,String> toMap(QueryDataOutputFormat data) {
 
 		if (null == data || null == data.datapoints)
 			return null;
 
-		Map map = new LinkedHashMap();
+		Map<String,String> map = new LinkedHashMap<String,String>();
 		for (QueryDataOutputFormat.Datapoint dp : data.datapoints) {
 			map.put(dp.time, dp.value);
 		}
@@ -192,8 +196,21 @@ public class LuaToJavaFunctionMapper {
 
 	public double compute(QueryDataOutputFormat data, String function) {
 
-		if( data == null || data.datapoints == null) {
+		if( data == null || data.datapoints == null || data.datapoints.isEmpty()) {
 			return Double.NaN;
+		}
+		
+		//handle time functions
+		if("FIRST_TIME".equalsIgnoreCase(function)){
+			return Double.parseDouble(data.datapoints.get(0).time);
+		} else if("FIRST_VALUE".equalsIgnoreCase(function)){
+			return Double.parseDouble(data.datapoints.get(0).value);
+		} else if("LAST_TIME".equalsIgnoreCase(function)){
+			String d = data.datapoints.get(data.datapoints.size()-1).time;
+			return Double.parseDouble(d);
+		} else if("LAST_VALUE".equalsIgnoreCase(function)){
+			String d = data.datapoints.get(data.datapoints.size()-1).value;
+			return Double.parseDouble(d);			
 		}
 		
 		DescriptiveStatistics stat = new DescriptiveStatistics();		
@@ -218,37 +235,67 @@ public class LuaToJavaFunctionMapper {
 			return stat.getN();
 		} else {
 			return Double.NaN;
-		}		
+		}
 	}
 	
-	public Double read(String resource, int nSeconds, String function) {
-		
-		//System.out.println(resource + nSeconds);
+	// for nesl veris meter
+	// overwirte the channel information and uses channel<start to end> 
+	// 
+	public Double readAll(String resource, String channel, int start, 
+			int end, int nSeconds, String function) {
 		
 		DeviceInfo device = toDeviceInfo(resource);
-		String secretkey = null;
-		
+		String secretkey = null;		
 		try {
 				//System.out.println("after.......................");
 				secretkey = SensorActAPI.userProfile.getSecretkey(device.username);
 				
-				//System.out.println( device.username + "  " + secretkey);
+				if(secretkey == null) 
+					return Double.NaN;
+			
+			//long timeNow = new Date().getTime();
+			long timeNow = DateTime.now(DateTimeZone.UTC).getMillis();
+			
+			
+			double agg = 0;
+			String ch;
+			
+			while(start <= end) {				
+				ch = channel + start;
+				
+				//System.out.println("Reading .. " + ch);				
+				QueryDataOutputFormat data = DataQueryV2.readDataNew(secretkey, device.device, 
+						device.sensor, ch, 
+						timeNow-nSeconds*1000, timeNow, null);
+				
+				double val = compute(data, function);
+				agg += val;
+				
+				++start;
+			}
+			
+			//System.out.println("Sending email.. ");
+			//sendTestEmail("Average is " + (sum/count));			
+			//System.out.println("Returning.. " + val);
+			return agg;
+			
+		} catch(Exception e) {
+			LOG.error("readAll "+e.getLocalizedMessage());
+			e.printStackTrace();
+			return Double.NaN;
+		}		
+	}
+
+	public Double read(String resource, int nSeconds, String function) {
+		
+		DeviceInfo device = toDeviceInfo(resource);
+		String secretkey = null;
+		try {
+				//System.out.println("after.......................");
+				secretkey = SensorActAPI.userProfile.getSecretkey(device.username);
 				
 				if(secretkey == null) 
-					return (double)0;
-			
-				
-			//device.username = SensorActAPI.userProfile.getOwnername();
-	
-			//String email = SensorActAPI.userProfile.getEmail(SensorActAPI.userProfile.getOwnername());
-			//RequestingUser requestingUser = new RequestingUser(email);
-	
-			//long timeNow = new Date().getTime()/1000;		
-			//List<WaveSegmentModel> wsList = GuardRuleManager.read(device.username,
-				//	requestingUser, device.device, device.sensor, device.sensorid, timeNow-(nMins*60), timeNow);
-	
-			//if (null == wsList)
-				//return null;
+					return Double.NaN;
 			
 			//long timeNow = new Date().getTime();
 			long timeNow = DateTime.now(DateTimeZone.UTC).getMillis();
@@ -264,29 +311,163 @@ public class LuaToJavaFunctionMapper {
 			//System.out.println("Returning.. " + val);
 			return val;
 			
-		} catch(Exception e) {
-			System.out.println(e.getLocalizedMessage());
+		} catch(Exception e) {			
+			LOG.error("read " + e.getLocalizedMessage());
+			e.printStackTrace();
+			return Double.NaN;
 		}
+	}
+
+	public String plot(String resource, int nSeconds) {
+		return plot(resource, nSeconds, "");
+	}
+	
+	public String plot(String resource, int nSeconds, String unit) {
 		
-		return (double) 0;
+		DeviceInfo device = toDeviceInfo(resource);
+		String secretkey = null;		
+		try {
+				//System.out.println("after.......................");
+				secretkey = SensorActAPI.userProfile.getSecretkey(device.username);
+				
+				if(secretkey == null) 
+					return null;
+			
+			//long timeNow = new Date().getTime();
+			long timeNow = DateTime.now(DateTimeZone.UTC).getMillis();
+			
+			QueryDataOutputFormat data = DataQueryV2.readDataNew(secretkey, device.device, 
+					device.sensor, device.channel, 
+					timeNow-nSeconds*1000, timeNow, null);
+			
+			//System.out.println("Creating plot...");
+			return Plot.createPlot(toMap(data), device.channel, unit);		
+			//System.out.println("Sending email.. ");
+			//sendTestEmail("Average is " + (sum/count));			
+			//System.out.println("Returning.. " + val);
+		} catch(Exception e) {			
+			LOG.error("plot " + e.getLocalizedMessage());
+			return null;
+		}
+	}
+
+	
+	public String getEmailList() {		
+		try {
+			String filename = Play.applicationPath.getPath() + "/conf/email.list.txt";		
+			FileReader fr = new FileReader(filename);
+			char []buf= new char[1024];
+			fr.read(buf); 
+			return new String(buf);
+		} catch(Exception e) {
+			LOG.error("getEmailList " + e.getMessage());			
+		}
+		return null;
+	}
+
+	public boolean email(String to, String subject, String msg) {
+		return email(to, subject, msg, null);
+	}
+	
+	public boolean email(String to, String subject, String msg, String attachment) {
+		
+		try{
+		
+			if(to==null || to.length() == 0) {
+				to = getEmailList();
+			}			
+			StringTokenizer tokenizer = new StringTokenizer(to, ", ");			
+			while(tokenizer.hasMoreTokens()) {
+				String toemail = tokenizer.nextToken();
+				//LOG.info("Sending email to : " + toemail + " " + msg);
+				Email email = new Email(toemail, subject, msg, attachment);
+				email.sendNow(jobContext);					
+			}						
+		}catch(Exception e) {
+			LOG.error("email " + e.getMessage());
+			return false;
+		}		
+		return true;
+	}
+
+	public String getSMSnos() {		
+		try {
+			String filename = Play.applicationPath.getPath() + "/conf/sms.nos.txt";		
+			FileReader fr = new FileReader(filename);
+			char []buf= new char[1024];
+			fr.read(buf); 
+			return new String(buf);
+		} catch(Exception e) {
+			LOG.error("getSMSnos " + e.getMessage());			
+		}
+		return null;
+	}
+	
+	// toList is comma seperated list of mobile numbeers
+	public boolean sms(String toList, String msg) {
+		
+		try{			
+			if(toList==null || toList.length() == 0) {
+				toList = getSMSnos();
+			}			
+			StringTokenizer tokenizer = new StringTokenizer(toList, ", ");			
+			while(tokenizer.hasMoreTokens()) {
+				String to = tokenizer.nextToken();
+				//LOG.info("Sending SMS to: " + to + " " + msg);
+				String context = jobContext.getJobDetail().getKey().toString();				
+				SMSGateway.sendSMS(context, to, msg);	
+			}				
+		}catch(Exception e) {
+			LOG.error("sms " + e.getMessage());
+			e.printStackTrace();
+			return false;
+		}		
+		return true;
+	}
+	
+	public String time2str(long epoch) {		
+		DateTime dt = new DateTime(epoch);
+		return dt.toString();
+	}
+	
+	// t1 - t2
+	public String timedif(long t1, long t2) {
+		DateTime dt1 = new DateTime(t1);
+		DateTime dt2 = new DateTime(t2);
+		
+		int hh = Hours.hoursBetween(dt2, dt1).getHours() % 24;
+		int mm = Minutes.minutesBetween(dt2, dt1).getMinutes() % 60;
+
+		String diff =  String.format("%02d Hours and %02d Minutes", hh, mm);
+		
+		return diff;
 	}
 	
 	public boolean writeData(String resource, double data) {
 		
-		DeviceInfo device = toDeviceInfo(resource);
-		//WaveSegmentFormat ws = makeWaveSegment(device, data);
-		
-		String secretkey = SensorActAPI.userProfile.getSecretkey(device.username);
+		try {
+			DeviceInfo device = toDeviceInfo(resource);
+			//WaveSegmentFormat ws = makeWaveSegment(device, data);
+			
+			String secretkey = SensorActAPI.userProfile.getSecretkey(device.username);
+			if(secretkey == null) 
+				return false;
 
-		
-		//String jsonStr = SensorActAPI.json.toJson(ws);
-		
-		//System.out.println("writing new wavesegment " + jsonStr);
-		//SensorActAPI.dataUploadWaveseg.doProcess(jsonStr);
-		
-		long timeNow = DateTime.now(DateTimeZone.UTC).getMillis();
-		SensorActAPI.dataUpload.doProcess(secretkey, device.device, device.sensor, 
-				device.channel, timeNow+"", data+"");
+			//System.out.println("writing new wavesegment " + jsonStr);
+			//SensorActAPI.dataUploadWaveseg.doProcess(jsonStr);
+			
+			long timeNow = DateTime.now(DateTimeZone.UTC).getMillis();
+			
+			//SensorActAPI.dataUpload.doProcess(secretkey, device.device, device.sensor, 
+				//	device.channel, timeNow+"", data+"");
+			
+			DataArchiever.storeDatapoint(device.username, device.device, device.sensor, device.channel, timeNow, data+"");
+
+			
+		} catch(Exception e) {
+			LOG.error("writeData " + e.getMessage());
+			return false;
+		}
 		
 		return true;
 	}

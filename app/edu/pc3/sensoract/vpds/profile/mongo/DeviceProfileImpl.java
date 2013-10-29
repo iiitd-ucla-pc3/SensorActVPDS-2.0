@@ -65,7 +65,7 @@ import edu.ucla.nesl.sensorsafe.model.Stream;
  */
 public class DeviceProfileImpl implements DeviceProfile {
 
-	
+/*	
 	public boolean createDatastream(final DeviceAddFormat newDevice) {
 		
 		String username = null;
@@ -97,7 +97,8 @@ public class DeviceProfileImpl implements DeviceProfile {
 		
 		return true;
 	}
-
+*/
+	
 	
 	/**
 	 * Adds a new device to the repository.
@@ -110,7 +111,7 @@ public class DeviceProfileImpl implements DeviceProfile {
 	public boolean addDevice(final DeviceAddFormat newDevice) {
 		DeviceModel device = new DeviceModel(newDevice);
 		device.save();
-		createDatastream(newDevice);
+		//createDatastream(newDevice);
 		return true;
 	}
 

@@ -5,8 +5,8 @@ log4j.logger.play=INFO
 # Rolling files
 log4j.appender.Rolling=org.apache.log4j.RollingFileAppender
 log4j.appender.Rolling.File=logs/application.log
-log4j.appender.Rolling.MaxFileSize=1MB
-log4j.appender.Rolling.MaxBackupIndex=100
+log4j.appender.Rolling.MaxFileSize=5MB
+log4j.appender.Rolling.MaxBackupIndex=20
 log4j.appender.Rolling.layout=org.apache.log4j.PatternLayout
 log4j.appender.Rolling.layout.ConversionPattern=%d{ABSOLUTE} %-5p ~ %m%n
 
@@ -16,12 +16,22 @@ log4j.appender.Console.layout=org.apache.log4j.PatternLayout
 log4j.appender.Console.layout.ConversionPattern=%d{ABSOLUTE} %-5p ~ %m%n
 
 # Data Upload WaveSegment
-log4j.appender.Upload=org.apache.log4j.RollingFileAppender
-log4j.appender.Upload.File=logs/upload.log
-log4j.appender.Upload.MaxFileSize=1MB
-log4j.appender.Upload.MaxBackupIndex=100
-log4j.appender.Upload.layout=org.apache.log4j.PatternLayout
-log4j.appender.Upload.layout.ConversionPattern= %d{ABSOLUTE} %-5p ~ %m%n
+log4j.appender.upload=org.apache.log4j.RollingFileAppender
+log4j.appender.upload.File=logs/upload.log
+log4j.appender.upload.MaxFileSize=5MB
+log4j.appender.upload.MaxBackupIndex=20
+log4j.appender.upload.layout=org.apache.log4j.PatternLayout
+log4j.appender.upload.layout.ConversionPattern= %d{ABSOLUTE} %-5p ~ %m%n
 
-log4j.logger.edu.pc3.sensoract.vpds.api.DataUploadWaveSegment=INFO, Upload
-log4j.logger.edu.pc3.sensoract.vpds.tasklet=INFO, Upload
+# tasklet logs
+log4j.appender.tasklet=org.apache.log4j.RollingFileAppender
+log4j.appender.tasklet.File=logs/tasklet.log
+log4j.appender.tasklet.MaxFileSize=5MB
+log4j.appender.tasklet.MaxBackupIndex=20
+log4j.appender.tasklet.layout=org.apache.log4j.PatternLayout
+log4j.appender.tasklet.layout.ConversionPattern= %d{ABSOLUTE} %-5p ~ %m%n
+
+log4j.logger.edu.pc3.sensoract.vpds.api.DataUpload=INFO, upload
+
+log4j.logger.edu.pc3.sensoract.vpds.tasklet.LuaScriptTasklet=INFO, tasklet
+log4j.logger.edu.pc3.sensoract.vpds.tasklet.LuaToJavaFunctionMapper=INFO, tasklet

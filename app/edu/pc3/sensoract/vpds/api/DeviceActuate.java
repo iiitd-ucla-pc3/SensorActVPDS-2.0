@@ -115,14 +115,13 @@ public class DeviceActuate extends SensorActAPI {
 				
 			}
 			else if (shareProfile.isAccessKeyExists(tasklet.secretkey)) {
-				username = shareProfile.getUsername(tasklet.secretkey);
-				
+				username = shareProfile.getUsername(tasklet.secretkey);				
 			}
 			if (null == username) {
 				response.sendFailure(Const.API_DEVICE_ACTUATE,
 						ErrorType.UNREGISTERED_SECRETKEY, tasklet.secretkey);
 			}
-
+			
 			// Get tasklet from the schedule
 			TaskletModel taskToSchedule = new TaskletModel(tasklet);
 

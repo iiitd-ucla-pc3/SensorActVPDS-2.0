@@ -11,6 +11,7 @@ import java.util.Observable;
 import org.apache.log4j.Logger;
 import org.quartz.JobDetail;
 
+import edu.pc3.sensoract.vpds.api.DataUpload;
 import edu.pc3.sensoract.vpds.api.request.WaveSegmentFormat;
 
 /**
@@ -24,7 +25,8 @@ public class DeviceEvent extends Observable {
 
 	private static Map<String, ArrayList<DeviceEventListener>> mapListeners = 
 			new HashMap<String, ArrayList<DeviceEventListener>>();
-	private static Logger uploadLog = Logger.getLogger("UploadLogger");
+	
+	
 
 	public DeviceEvent() {
 	//	mapListeners = new HashMap<String, ArrayList<DeviceEventListener>>();
@@ -39,7 +41,7 @@ public class DeviceEvent extends Observable {
 		DeviceId deviceId = new DeviceId(ws.secretkey, ws.data.dname,
 				ws.data.sname, ws.data.sid);
 		
-		uploadLog.info(System.currentTimeMillis()/1000 + " :: notifyWaveSegmentArrived.. DeviceId "
+		DataUpload.LOG.info(System.currentTimeMillis()/1000 + " :: notifyWaveSegmentArrived.. DeviceId "
 				+ deviceId.toString());
 
 		ArrayList<DeviceEventListener> listListener = mapListeners.get(deviceId
@@ -47,7 +49,7 @@ public class DeviceEvent extends Observable {
 		if (null == listListener)
 			return;
 
-		uploadLog.info("notifyWaveSegmentArrived.. Listeners "
+		DataUpload.LOG.info("notifyWaveSegmentArrived.. Listeners "
 				+ listListener.size() + "\n");
 
 		for (DeviceEventListener listener : listListener) {

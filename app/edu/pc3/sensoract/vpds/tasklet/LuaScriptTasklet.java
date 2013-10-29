@@ -42,8 +42,7 @@
 package edu.pc3.sensoract.vpds.tasklet;
 
 import java.util.Date;
-import java.util.Map;
-import java.util.Set;
+import java.util.Enumeration;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -51,15 +50,16 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.SimpleScriptContext;
 
-import org.hibernate.annotations.AccessType;
+import org.apache.log4j.Appender;
+import org.apache.log4j.Logger;
 import org.quartz.InterruptableJob;
-import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.quartz.UnableToInterruptJobException;
 
+import edu.pc3.sensoract.vpds.api.DataUpload;
 import edu.pc3.sensoract.vpds.model.TaskletModel;
 import edu.pc3.sensoract.vpds.util.SensorActLogger;
 
@@ -71,14 +71,24 @@ public class LuaScriptTasklet implements InterruptableJob {
 	
 	// private static LuaJavaMapper luaJavaMapper = new LuaJavaMapper();
 	//private String luaScript = null;
+
+	public static final Logger LOG = LuaToJavaFunctionMapper.LOG;
 	
 	public static String TASKLETINFO = "TASKLETINFO";
 	public static String VPDS = "VPDS";
 
+	
+	static {
+	    for (Enumeration appenders=LOG.getAllAppenders(); appenders.hasMoreElements(); )  {
+	        Appender appender = (Appender) appenders.nextElement();
+	        System.out.println(appender.getName());
+	    }
+	}
+	
 	static {
 		luaEngine = new ScriptEngineManager().getEngineByName("Lua");
-		LuaToJavaFunctionMapper luaToJavaFunctionMapper = new LuaToJavaFunctionMapper();
-		luaEngine.put(VPDS, luaToJavaFunctionMapper);
+		//LuaToJavaFunctionMapper luaToJavaFunctionMapper = new LuaToJavaFunctionMapper();
+		//luaEngine.put(VPDS, luaToJavaFunctionMapper);
 	}
 
 	/*
@@ -102,12 +112,12 @@ public class LuaScriptTasklet implements InterruptableJob {
 		
 		//TODO: validate the tasklet
 		
-		SensorActLogger.info(jobKey.getName() + " started..." );
+		LOG.info(jobKey.getName() + " started..." );
 
 		try {
 
 			ScriptEngine luaEngineLocal = new ScriptEngineManager().getEngineByName("Lua");
-			LuaToJavaFunctionMapper luaToJavaFunctionMapper = new LuaToJavaFunctionMapper();
+			LuaToJavaFunctionMapper luaToJavaFunctionMapper = new LuaToJavaFunctionMapper(context);
 			luaEngineLocal.put(VPDS, luaToJavaFunctionMapper);
 			
 			// Object email = dataMap.get("email");
@@ -158,7 +168,7 @@ public class LuaScriptTasklet implements InterruptableJob {
 				e.printStackTrace();
 			}
 			
-
+			
 			long e1 = new Date().getTime();
 			luaEngineLocal.eval(tasklet.execute, newScope);			
 			long e2 = new Date().getTime();
@@ -190,8 +200,10 @@ public class LuaScriptTasklet implements InterruptableJob {
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			System.out.println("Error while running lua script for *********** " + jobKey.getName());
+			LOG.info(jobKey.getName() + " error " + e.getMessage() );
 			e.printStackTrace();
-		}
+		}		
+		LOG.info(jobKey.getName() + " ended...." );
 
 	}
 

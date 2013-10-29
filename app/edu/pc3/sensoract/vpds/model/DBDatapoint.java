@@ -44,6 +44,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -97,9 +98,10 @@ public class DBDatapoint {
 	private static DBCollection getCollection(String device, String sensor,
 			String channel) {
 		
-		String name = device.concat("_").concat(sensor).concat("_")
-				.concat(channel);
-
+		//u__d0__s0__c0__102013
+		
+		String name = "u__" + device.concat("__").concat(sensor).concat("__")
+				.concat(channel) + "__102013";
 		// TODO: ??
 		return Datapoint.db().getCollection(name);
 		
@@ -130,6 +132,7 @@ public class DBDatapoint {
 		//System.out.println("Collection name " + collectionName );
 		// TODO: ??
 		return Datapoint.db().getCollection(collectionName);
+		
 	}
 
 	public DBDatapoint() {
@@ -220,7 +223,7 @@ public class DBDatapoint {
 		col.ensureIndex(new BasicDBObject("_id", -1));
 		return true;
 	}
-
+	
 	// http://code.google.com/p/morphia/wiki/Query#Ignoring_Fields
 	public static List<DBDatapoint> fetch(String device, String sensor,
 			String channel, long start, long end) {
@@ -253,9 +256,10 @@ public class DBDatapoint {
 
 	public static List<DBDatapoint> fetch(String username, String device, String sensor,
 			String channel, long start, long end) {
-
-		DBCollection collection = getCollection(username, device, sensor, channel, start);		
-
+		
+		DBCollection col1 = getCollection(username, device, sensor, channel, start);		
+		DBCollection col2 = getCollection(username, device, sensor, channel, end);
+		
 		DBObject query = getQuery(start, end);
 
 		// System.out.println(collection.getFullName());
@@ -263,15 +267,22 @@ public class DBDatapoint {
 
 		//System.out.println("\n" + new Date() + "   Querying.. ");
 
-		DBCursor cursor = collection.find(query);
+		DBCursor cursor1 = col1.find(query);
 
 		// System.out.println("count : " + cursor.count() + " " +
 		// cursor.explain());
 
-		List<DBDatapoint> listDP = new ArrayList<DBDatapoint>();
-		List<DBObject> listObj = cursor.toArray();		
+		List<DBObject> listObj = new ArrayList<DBObject>();
+		listObj.addAll(cursor1.toArray());
+		
+		if(!col1.getName().equals(col2.getName())) {
+			DBCursor cursor2 = col2.find(query);
+			listObj.addAll(cursor2.toArray());
+		}
+		
 		//System.out.println(new Date() + "   done " + listObj.size());
 		
+		List<DBDatapoint> listDP = new ArrayList<DBDatapoint>();
 		for (DBObject dbo : listObj) {
 			listDP.add(toDBDatapoint(dbo));
 		}
@@ -282,6 +293,17 @@ public class DBDatapoint {
 	}
 
 	
+	public static Set<String> getCollectionNames() {		
+		return Datapoint.db().getCollectionNames();
+	}
+
+	public static boolean ensureIndex(String name) {		
+		DBObject  index =  new BasicDBObject("_id", -1);
+		DBObject  options =  new BasicDBObject("background", true);		
+		DBCollection col = Datapoint.db().getCollection(name);		
+		col.ensureIndex(index, options);		
+		return true;
+	}
 	
 	public static void saveWS(WaveSegmentFormat ws, String username) {
 		

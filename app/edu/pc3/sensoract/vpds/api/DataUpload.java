@@ -42,9 +42,11 @@ package edu.pc3.sensoract.vpds.api;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 
 import play.Play;
@@ -73,7 +75,15 @@ import edu.ucla.nesl.sensorsafe.model.Stream;
 public class DataUpload extends SensorActAPI {
 
 	private static boolean isSendResponseEnabled = true;
-	private static Logger uploadLog = Logger.getLogger("UploadLogger");
+	
+	public static final Logger LOG = Logger.getLogger(DataUpload.class.getName());
+	
+	static {
+		    for (Enumeration appenders=LOG.getAllAppenders(); appenders.hasMoreElements(); )  {
+		        Appender appender = (Appender) appenders.nextElement();
+		        System.out.println(appender.getName());
+		    }
+	}
 	
 	public DataUpload() {
 		super();
@@ -94,6 +104,7 @@ public class DataUpload extends SensorActAPI {
 		} else {
 			response.sendEmpty(); // to complete the request
 		}
+			
 	}
 
 	private void validateWaveSegmentData(final WaveSegmentFormat waveSegment) {
@@ -173,7 +184,7 @@ public class DataUpload extends SensorActAPI {
 			WSRequest wsr = WS.url(url).body(ws).timeout("10min");		
 			HttpResponse trainRes = wsr.post();			
 		} catch (Exception e) {
-			uploadLog.info("sendtoAnother.. " + e.getMessage());
+			LOG.info("sendtoAnother.. " + e.getMessage());
 		}
 	}
 

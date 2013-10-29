@@ -162,7 +162,7 @@ public class TaskletScheduler {
 
 		JobDataMap luaJobDataMap = luaJob.getJobDataMap();
 
-		Email email = new Email("muc.iiitd@gmail.com", "subject", "message ");
+		Email email = new Email("muc.iiitd@gmail.com", "subject", "message ", null);
 		luaJobDataMap.put("email", email);
 
 		// System.out.println("params " + params );

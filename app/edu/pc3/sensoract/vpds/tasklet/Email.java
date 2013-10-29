@@ -62,20 +62,25 @@ public class Email {
 	public String toEmail = null;
 	public String subject = null;
 	public String message = null;
+	public String attachment_path = null;
 
 	private static final String CLASSNAME = "Email";
 
-	public Email(String toEmail, String subject, String message) {
+	public Email(String toEmail, String subject, String message, String attachment_path) {
 		this.toEmail = toEmail;
 		this.subject = subject;
 		this.message = message;
+		this.attachment_path = attachment_path;
 	}
 
 	public void sendNow(JobExecutionContext jobContext) {
-
+		
+		String context = jobContext.getJobDetail().getKey().toString();		
+		//System.out.println(context);
+		
 		// straight forward way
 		// System.out.println("sending mail to " + toEmail);
-		SendEmailJob.sendMail(toEmail, subject, message);
+		SendEmailJob.sendMail(context, toEmail, subject, message, attachment_path);
 		// sendEmailViaJob(jobContext);
 	}
 

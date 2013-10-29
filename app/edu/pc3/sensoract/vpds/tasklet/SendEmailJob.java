@@ -40,8 +40,11 @@
  */
 package edu.pc3.sensoract.vpds.tasklet;
 
-import org.apache.commons.mail.EmailException;
-import org.apache.commons.mail.SimpleEmail;
+import java.io.File;
+
+import org.apache.commons.mail.EmailAttachment;
+import org.apache.commons.mail.MultiPartEmail;
+import org.apache.log4j.Logger;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 
@@ -64,6 +67,17 @@ public class SendEmailJob implements Job {
 	public String subject = null;
 	public String message = null;
 
+	private static final String NAME = SendEmailJob.class.getSimpleName();
+	private static final Logger LOG = LuaToJavaFunctionMapper.LOG;
+
+	private static String fromEmail = null;
+	private static String sender = null;
+
+	static {
+		fromEmail = Play.configuration.getProperty("mail.smtp.user", "mailer.sensoract@gmail.com");
+		sender = Play.configuration .getProperty("mail.smtp.sender", "SensorAct");
+	}
+
 	public void setToEmail(String toEmail) {
 		this.toEmail = toEmail;
 	}
@@ -76,31 +90,69 @@ public class SendEmailJob implements Job {
 		this.message = message;
 	}
 
-	public static void sendMail(final String toEmail, final String subject,
-			final String message) {
+	private static EmailAttachment makeAttachment(String context,
+			String filename) {
 
-		String fromEmail = (String) Play.configuration.get("mail.smtp.user");
-		if (null == fromEmail) {
-			fromEmail = "mailer.sensoract@gmail.com";
+		try {
+			File file = new File(filename);
+			if (file.isFile() && file.exists()) {
+				EmailAttachment attachment = new EmailAttachment();
+				attachment.setPath(file.getCanonicalPath());
+				attachment.setDisposition(EmailAttachment.ATTACHMENT);
+				attachment.setDescription(file.getName());
+				attachment.setName(file.getName());
+				return attachment;
+				// email.attach(attachment);
+			} else {
+				LOG.error(context + " " + NAME + " Invalided attachement file "
+						+ filename);
+			}
+		} catch (Exception e) {
+			LOG.error(context + " " + NAME + " Attachment error " + filename);
+		}
+		return null;
+	}
+
+	public static void sendMail(String context, String toEmail, String subject,
+			String message, String attachment_path) {
+
+		LOG.info(context + " " + NAME + " Sending email to " + toEmail + " " + subject );
+		
+		context = (null == context ? "" : context);
+		subject = (null == subject ? "" : subject);
+		message = (null == message ? "" : message);
+
+		if (toEmail == null) {
+			LOG.error(context + " " + NAME + " Invalied toEmail " + toEmail);
+			return;
 		}
 
-		SimpleEmail email = new SimpleEmail();
+		// SimpleEmail email = new SimpleEmail();
+		MultiPartEmail email = new MultiPartEmail();
 		try {
-			email.setFrom(fromEmail, "SensorAct Mailer");
+			email.setFrom(fromEmail, sender);
 			email.addTo(toEmail);
 			email.setSubject(subject);
 			email.setMsg(message);
-			Mail.send(email);
-		} catch (EmailException e) {
-			e.printStackTrace();
-		}
 
+			if(null != attachment_path) {
+				EmailAttachment attachment = makeAttachment(context,
+						attachment_path);
+				if (null != attachment) {
+					email.attach(attachment);
+				}				
+			}
+			// email.send();
+			Mail.send(email);
+		} catch (Exception e) {
+			LOG.error(context + " " + NAME + " Error " + e.getMessage());
+		}
 	}
 
 	@Override
 	public void execute(JobExecutionContext context) {
 		try {
-			SendEmailJob.sendMail(toEmail, subject, message);
+			SendEmailJob.sendMail("", toEmail, subject, message, null);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

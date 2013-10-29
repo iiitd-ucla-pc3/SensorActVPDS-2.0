@@ -40,26 +40,13 @@
  */
 package controllers;
 
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import org.joda.time.DateTime;
 
 import play.mvc.Before;
 import play.mvc.Controller;
 import edu.pc3.sensoract.vpds.api.SensorActAPI;
 import edu.pc3.sensoract.vpds.api.request.TaskletAddFormat;
-import edu.pc3.sensoract.vpds.model.DBDatapoint;
-import edu.pc3.sensoract.vpds.tasklet.Email;
-import edu.ucla.nesl.sensorsafe.db.StreamDatabaseDriver;
-import edu.ucla.nesl.sensorsafe.informix.InformixStreamDatabaseDriver;
-import edu.ucla.nesl.sensorsafe.model.Channel;
-import edu.ucla.nesl.sensorsafe.model.Stream;
-import edu.ucla.nesl.sensorsafe.tools.Log;
 
 /**
  * Application class, entry point for all APIs.
@@ -76,14 +63,7 @@ public class Application extends Controller {
 		// request.headers.get("x-key").value());
 	}
 
-	public static void index() {
-		Email email = new Email("pandarasamya@iiitd.ac.in", "Tasklet notification", "HELLO");
-		long t1 = new Date().getTime();
-		System.out.println("before notifyEmail..." + new Date().getTime());
-		email.sendNow(null);
-		long t2 = new Date().getTime();
-		System.out.print(" notifyEmail :" + (t2-t1));
-		System.out.println("after notifyEmail..." + new Date().getTime());
+	public static void index() {		
 		renderText("Welcome to SensorAct!");
 	}
 
@@ -336,101 +316,13 @@ public class Application extends Controller {
 		SensorActAPI.deviceCancelActuationRequest.doProcess(request.params
 				.get("body"));
 	}
-
-	private static StreamDatabaseDriver streamDb;
-	
-	static {
-		streamDb = InformixStreamDatabaseDriver.getInstance();
-		try {
-			System.out.println("connecting to Ifx.....");
-			streamDb.connect();			
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
+			
 	// For development test purpose.
-	public static void test() throws Exception {		
+	public static void test() throws Exception {
 		
-		List<Channel> chList  = new ArrayList<Channel>();		
-		chList.add(new Channel("ch1", "float"));
-
-		Stream st = new Stream(1,"nesl_owner__Test_Device1__Temperature__channel1", "tags", chList);
+		temp.loadComputedSensors();
 		
-		try {
-			streamDb.createStream(st);
-		} catch(Exception e) {
-			System.out.println(e.getMessage());
-		}
-		
-		renderText("ddd");
-		
-		try {
-			Log.info(DateTime.now().toString() + " Inserting...");
-			DateTime start = DateTime.now();
-			
-			long t1 = DateTime.now().getMillis();
-			long t2 = DateTime.now().getMillis();
-			long t3 = DateTime.now().getMillis();
-			
-			DateTime iStart = start; 
-			
-			int i=0;
-			while(true) {				
-				DateTime now = start.plusMillis(i++);				
-				Timestamp timeStamp = new Timestamp(now.getMillis());				
-				streamDb.addTuple("ds", timeStamp.toString(), i+"");				
-				if(i%1000 == 0 ) {
-					t1 = DateTime.now().getMillis();
-					Log.info(DateTime.now().toString() + " Inserted " + i + " " + (t1-t3));
-					iStart = now;
-					//Log.info(DateTime.now().toString() + " Querying...");					
-					String stt = new Timestamp(start.getMillis()).toString();
-					String ent = new Timestamp(t1).toString();					
-					t2 = DateTime.now().getMillis();
-					int size = streamDb.queryStream("ds", stt, ent, null);
-					t3 = DateTime.now().getMillis();
-					Log.info(DateTime.now().toString() + " Queried  " + size + " " + (t3-t2)+"\n");
-				}
-				break;
-			}
-			
-			
-			//renderJSON(obj);
-			
-		} catch(Exception e) {
-			System.out.println(e.getMessage());
-			e.printStackTrace();
-		}
-		
-		//renderText("dd");
-		
-		long t = new Date().getTime();
-
-		DBDatapoint dbp = new DBDatapoint();
-
-		dbp.drop();
-		
-		for (int v = 0; v <10; ++v) {
-			dbp.push(t, v + "");
-			if(v%1000 == 0 ) {
-				System.out.println(new Date()+ " pushed# " + v);
-			}
-		}
-		
-		//t = 1373511533116l;		
-		System.out.println("..........counting..");
-		dbp.count();
-		
-		System.out.println("..........fetching..");
-		//dbp.fetch(t, t+1000000);
-		
-		System.out.println("..........indexing.");
-		//dbp.index();
-
-		System.out.println("..........fetching..");
-		//dbp.fetch(t, t+1000000);
-
+		renderText("done!");
 	}
 	
 	public static void computedSensor1() {		
