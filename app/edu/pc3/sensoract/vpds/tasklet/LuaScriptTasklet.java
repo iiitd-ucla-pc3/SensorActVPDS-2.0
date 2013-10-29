@@ -112,7 +112,7 @@ public class LuaScriptTasklet implements InterruptableJob {
 		
 		//TODO: validate the tasklet
 		
-		LOG.info(jobKey.getName() + " started..." );
+		LOG.info(jobKey.toString() + " started..." );
 
 		try {
 
@@ -200,11 +200,10 @@ public class LuaScriptTasklet implements InterruptableJob {
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			System.out.println("Error while running lua script for *********** " + jobKey.getName());
-			LOG.info(jobKey.getName() + " error " + e.getMessage() );
+			LOG.info(jobKey.toString() + " error " + e.getMessage() );
 			e.printStackTrace();
 		}		
-		LOG.info(jobKey.getName() + " ended...." );
-
+		LOG.info(jobKey.toString() + " ended...." );
 	}
 
 	@Override

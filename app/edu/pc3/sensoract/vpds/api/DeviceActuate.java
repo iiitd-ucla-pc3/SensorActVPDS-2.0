@@ -122,6 +122,8 @@ public class DeviceActuate extends SensorActAPI {
 						ErrorType.UNREGISTERED_SECRETKEY, tasklet.secretkey);
 			}
 			
+			//taskletAdd.doProcess(actuateDeviceJson);
+			
 			// Get tasklet from the schedule
 			TaskletModel taskToSchedule = new TaskletModel(tasklet);
 

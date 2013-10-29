@@ -187,10 +187,10 @@ public class TaskletAdd extends SensorActAPI {
 			 TaskletModel tt = taskletManager.getTasklet(tasklet.secretkey,
 			 tasklet.taskletname);
 
-			response.sendJSON(tt);
+			//response.sendJSON(tt);
 
 			// TODO: Add tasklet
-			// response.SendSuccess(Const.API_TASK_ADD, Const.TODO);
+			 response.SendSuccess(Const.API_TASKLET_ADD, Const.MSG_SUCCESS);
 
 		} catch (InvalidJsonException e) {
 			response.sendFailure(Const.API_TASKLET_ADD, ErrorType.INVALID_JSON,

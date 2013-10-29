@@ -320,7 +320,7 @@ public class Application extends Controller {
 	// For development test purpose.
 	public static void test() throws Exception {
 		
-		temp.loadComputedSensors();
+		new temp().loadComputedSensors();
 		
 		renderText("done!");
 	}

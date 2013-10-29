@@ -22,8 +22,10 @@ import play.libs.WS.WSRequest;
 import edu.pc3.sensoract.vpds.api.SensorActAPI;
 import edu.pc3.sensoract.vpds.api.request.TaskletAddFormat;
 import edu.pc3.sensoract.vpds.model.DBDatapoint;
+import edu.pc3.sensoract.vpds.model.TaskletModel;
 import edu.pc3.sensoract.vpds.tasklet.Email;
 import edu.pc3.sensoract.vpds.tasklet.SMSGateway;
+import edu.pc3.sensoract.vpds.tasklet.TaskletScheduler;
 import edu.pc3.sensoract.vpds.util.JsonUtil;
 import edu.ucla.nesl.sensorsafe.db.StreamDatabaseDriver;
 import edu.ucla.nesl.sensorsafe.informix.InformixStreamDatabaseDriver;
@@ -31,21 +33,21 @@ import edu.ucla.nesl.sensorsafe.model.Channel;
 import edu.ucla.nesl.sensorsafe.model.Stream;
 import edu.ucla.nesl.sensorsafe.tools.Log;
 
-public class temp  {
+public class temp  extends SensorActAPI {
 	
 	public static String COMPUTED_PATH = "./conf/computed/";
 	
-	public static String getFileData(File file) {
+	public String getFileData(File file) {
 		
 		try {
 			//File file = Play.getFile(COMPUTED_PATH+filename);
 			FileReader fr = new FileReader(file);
 			
-			int size = 10*1024;
-			char []buf = new char[size];			
-			fr.read(buf, 0, size);
-			
-			return new String(buf);
+			FileInputStream fis = new FileInputStream(file);
+		    byte[] data = new byte[(int)file.length()];
+		    fis.read(data);		    
+		    String s = new String(data, "UTF-8");
+			return s;
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -53,12 +55,11 @@ public class temp  {
 	}
 
 
-
 	// load all the all computed sensor scripts in ./conf/computed
 	// file extension : .computed
 	// script entension: .lua
 	// name is filename
-	public static void loadComputedSensors() {
+	public void loadComputedSensors() {
 		
 		class ComputedFilter implements FileFilter {
 		    @Override
@@ -74,16 +75,38 @@ public class temp  {
 			for(File c : cFiles ) {
 				
 				String csData = getFileData(c);			
-				
-				System.out.println(csData);
-				
-				TaskletAddFormat tasklet = JsonUtil.json1.fromJson(csData, TaskletAddFormat.class);				
+
+				TaskletAddFormat tasklet =  convertToRequestFormat(csData, TaskletAddFormat.class);				
 				String luaF = c.getName().replace(".computed", ".lua");
 				
-				String luaData = getFileData( Play.getFile(COMPUTED_PATH+luaF) );				
-				tasklet.execute = luaData;
+				String luaData = getFileData( Play.getFile(COMPUTED_PATH+luaF) );
+
+				//System.out.println(luaData.length());
+				//System.out.println(luaData);
 				
-				System.out.println(JsonUtil.json1.toJson(tasklet));
+				tasklet.execute = luaData;
+				tasklet.secretkey = Play.configuration.getProperty("owner.ownerkey");
+				
+				String username = null;
+				if (userProfile.isRegisteredSecretkey(tasklet.secretkey)) {
+					username = userProfile.getUsername(tasklet.secretkey);					
+				}				
+				//taskletAdd.doProcess(actuateDeviceJson);
+				
+				taskletAdd.preProcessTasklet(tasklet);
+				
+				taskletManager.removeTasklet(tasklet.secretkey, tasklet.taskletname);
+				taskletManager.addTasklet(tasklet);
+				
+				TaskletModel taskletModel = taskletManager.getTasklet(
+						tasklet.secretkey, tasklet.taskletname);
+				
+				TaskletScheduler.cancelTasklet(username+"."+tasklet.taskletname);				
+				String taskletId = TaskletScheduler.scheduleTasklet(username, taskletModel);
+				
+				System.out.println(JsonUtil.json1.toJson(taskletModel));
+				System.out.println(taskletId + " Scheduled successfully");
+				
 			}
 			
 		} catch(Exception e) {
