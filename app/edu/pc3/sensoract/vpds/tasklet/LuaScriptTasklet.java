@@ -59,11 +59,10 @@ import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.quartz.UnableToInterruptJobException;
 
-import edu.pc3.sensoract.vpds.api.DataUpload;
 import edu.pc3.sensoract.vpds.model.TaskletModel;
-import edu.pc3.sensoract.vpds.util.SensorActLogger;
 
 //@org.quartz.DisallowConcurrentExecution
+@org.quartz.PersistJobDataAfterExecution
 public class LuaScriptTasklet implements InterruptableJob {
 
 	private static ScriptEngine luaEngine = null;
@@ -74,9 +73,12 @@ public class LuaScriptTasklet implements InterruptableJob {
 
 	public static final Logger LOG = LuaToJavaFunctionMapper.LOG;
 	
+	public static String PARAM_TIME = "PARAM_TIME";
+	public static String PARAM_VALUE = "PARAM_VALUE";
+	
 	public static String TASKLETINFO = "TASKLETINFO";
 	public static String VPDS = "VPDS";
-
+	
 	
 	static {
 	    for (Enumeration appenders=LOG.getAllAppenders(); appenders.hasMoreElements(); )  {
@@ -102,7 +104,6 @@ public class LuaScriptTasklet implements InterruptableJob {
 */
 	
 	public void execute(JobExecutionContext context) {
-
 		
 		long t1 = new Date().getTime();
 	
@@ -110,12 +111,24 @@ public class LuaScriptTasklet implements InterruptableJob {
 		JobDataMap dataMap = context.getJobDetail().getJobDataMap();		
 		TaskletModel tasklet = (TaskletModel) dataMap.get(TASKLETINFO);
 		
+		//System.out.println("data map.......................");
+		//for(String k : dataMap.getKeys()) {
+			//System.out.println(k + " " + dataMap.get(k));
+		//}
+		
+		// Get the params for event based tasklet
+		String param_time  = (String) dataMap.get(PARAM_TIME);
+		String param_value  = (String) dataMap.get(PARAM_VALUE);
+		
 		//TODO: validate the tasklet
 		
 		LOG.info(jobKey.toString() + " started..." );
-
+		
+		if(param_time != null && param_value != null) {
+			LOG.info(jobKey.toString() + " parameters " + param_time + " " + param_value);	
+		}
+		
 		try {
-
 			ScriptEngine luaEngineLocal = new ScriptEngineManager().getEngineByName("Lua");
 			LuaToJavaFunctionMapper luaToJavaFunctionMapper = new LuaToJavaFunctionMapper(context);
 			luaEngineLocal.put(VPDS, luaToJavaFunctionMapper);
@@ -142,10 +155,12 @@ public class LuaScriptTasklet implements InterruptableJob {
 			// luaEngine.put("PDS", LuaJavaMapper.class);
 			// luaEngine.put("email", email);
 			
-			
 			newScope.putAll(tasklet.input);
 			newScope.putAll(tasklet.param);
 			
+			//export the params received from event based tasklet
+			newScope.put(PARAM_TIME, param_time);
+			newScope.put(PARAM_VALUE, param_value);
 			
 			/*
 			Set keys = tasklet.input.keySet();			
@@ -200,7 +215,7 @@ public class LuaScriptTasklet implements InterruptableJob {
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			System.out.println("Error while running lua script for *********** " + jobKey.getName());
-			LOG.info(jobKey.toString() + " error " + e.getMessage() );
+			LOG.info(jobKey.toString() + " execute " + e.fillInStackTrace() );
 			e.printStackTrace();
 		}		
 		LOG.info(jobKey.toString() + " ended...." );

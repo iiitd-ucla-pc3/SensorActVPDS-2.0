@@ -1,33 +1,29 @@
-package edu.ucla.nesl.sensorsafe.informix;
+package edu.ucla.nesl.sensorsafe.db.informix;
 
+import java.io.IOException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import javax.naming.NamingException;
+
 import edu.ucla.nesl.sensorsafe.Const;
 import edu.ucla.nesl.sensorsafe.db.UserDatabaseDriver;
 import edu.ucla.nesl.sensorsafe.model.User;
-import edu.ucla.nesl.sensorsafe.tools.WebExceptionBuilder;
 
 public class InformixUserDatabaseDriver extends InformixDatabaseDriver implements UserDatabaseDriver {
 
-	private static InformixUserDatabaseDriver instance;
-	
-	public static InformixUserDatabaseDriver getInstance() {
-		if (instance == null) {
-			instance = new InformixUserDatabaseDriver();
-		}
-		return instance;
+	public InformixUserDatabaseDriver() throws SQLException, IOException,
+			NamingException, ClassNotFoundException {
+		super();
 	}
 
-	private InformixUserDatabaseDriver() {
-		// TODO Load database configuration properties here.
-	}
-
-	@Override
-	protected void initializeDatabase() throws SQLException {
+	public static void initializeDatabase() throws SQLException {
+		Connection conn = null;
 		PreparedStatement pstmt = null;
 		try {
+			conn = dataSource.getConnection();
 			pstmt = conn.prepareStatement("SELECT 1 FROM systables WHERE tabname=?");
 			pstmt.setString(1, Const.TABLE_ADMIN_USERS);
 			ResultSet rset = pstmt.executeQuery();
@@ -44,12 +40,16 @@ public class InformixUserDatabaseDriver extends InformixDatabaseDriver implement
 		} finally {
 			if (pstmt != null)
 				pstmt.close();
+			if (conn != null)
+				conn.close();
 		}
 	}
 
-	private void initializeTables() throws SQLException {
+	private static void initializeTables() throws SQLException {
 		PreparedStatement pstmt = null;
+		Connection conn = null;
 		try {
+			conn = dataSource.getConnection();
 			pstmt = conn.prepareStatement("DROP TABLE IF EXISTS " + Const.TABLE_ADMIN_USERS + ";");
 			pstmt.execute(); pstmt.close();
 			pstmt = conn.prepareStatement("CREATE TABLE " + Const.TABLE_ADMIN_USERS + " ("
@@ -84,6 +84,8 @@ public class InformixUserDatabaseDriver extends InformixDatabaseDriver implement
 		} finally {
 			if (pstmt != null)
 				pstmt.close();
+			if (conn != null)
+				conn.close();
 		}
 	}
 
@@ -120,8 +122,8 @@ public class InformixUserDatabaseDriver extends InformixDatabaseDriver implement
 				pstmt.executeUpdate();
 				pstmt.close();
 			} catch (SQLException e) {
-				if (e.toString().contains("duplicate value in a UNIQUE INDEX column"))
-					throw WebExceptionBuilder.buildBadRequest("Username already registered.");
+				if (e.toString().contains("Unique constraint") && e.toString().contains("violated."))
+					throw new IllegalArgumentException("Username already registered.");
 				else
 					throw e;
 			} finally {

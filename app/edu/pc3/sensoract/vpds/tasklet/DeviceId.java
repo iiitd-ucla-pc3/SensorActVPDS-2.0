@@ -13,49 +13,43 @@ import java.util.StringTokenizer;
  */
 public class DeviceId {
 
-	private String secretkey = null;
+	private String username = null;
 	private String device = null;
 	private String sensor = null;
-	private String sensorId = null;
+	private String channel = null;
 
-	public DeviceId(String secretkey, String device, String sensor, String id) {
+	public DeviceId(String username, String device, String sensor, String id) {
 		super();
-		this.secretkey = secretkey;
+		this.username = username;
 		this.device = device;
 		this.sensor = sensor;
-		this.sensorId = id;
-		
+		this.channel = id;
 	}
 
-	public DeviceId(String secretkey, String taskletDeviceIdFormat) {
+	// taskletDeviceIdFormat in the format of username:device:sensor:channel
+	public static DeviceId parseDeviceId(String taskletDeviceIdFormat) {
 
-		@SuppressWarnings("unused")
 		String username = null;
 		String device = null;
 		String sensor = null;
-		String sensorId = null;
+		String channel = null;
 
-		StringTokenizer tokenizer = new StringTokenizer(taskletDeviceIdFormat,
-				":");
+		StringTokenizer tokenizer = new StringTokenizer(taskletDeviceIdFormat,":");
 
 		try {
 			username = tokenizer.nextToken();
 			device = tokenizer.nextToken();
 			sensor = tokenizer.nextToken();
-			sensorId = tokenizer.nextToken();
+			channel = tokenizer.nextToken();
 		} catch (Exception e) {
-			return;
+			return null;
 		}
-
-		this.secretkey = secretkey;
-		this.device = device;
-		this.sensor = sensor;
-		this.sensorId = sensorId;
+		return new DeviceId(username, device, sensor, channel);
 	}
 
 	@Override
 	public String toString() {
-		return secretkey + ":" + device + ":" + sensor + ":" + sensorId;
+		return username + ":" + device + ":" + sensor + ":" + channel;
 	}
 
 	@Override
@@ -69,9 +63,9 @@ public class DeviceId {
 			return false;
 
 		DeviceId other = (DeviceId) obj;
-		if (secretkey.equals(other.secretkey) && device.equals(other.device)
+		if (username.equals(other.username) && device.equals(other.device)
 				&& sensor.equals(other.sensor)
-				&& sensorId.equals(other.sensorId)) {
+				&& channel.equals(other.channel)) {
 			return true;
 		}
 		return false;

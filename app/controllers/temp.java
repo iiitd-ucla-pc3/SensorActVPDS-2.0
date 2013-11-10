@@ -1,5 +1,8 @@
 package controllers;
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.net.URLEncoder;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -13,25 +16,24 @@ import org.joda.time.Hours;
 import org.joda.time.Minutes;
 import org.joda.time.Period;
 
-import java.io.*;
-
 import play.Play;
 import play.libs.WS;
 import play.libs.WS.HttpResponse;
 import play.libs.WS.WSRequest;
 import edu.pc3.sensoract.vpds.api.SensorActAPI;
 import edu.pc3.sensoract.vpds.api.request.TaskletAddFormat;
+import edu.pc3.sensoract.vpds.api.response.QueryDataOutputFormat;
+import edu.pc3.sensoract.vpds.data.DataArchiever;
 import edu.pc3.sensoract.vpds.model.DBDatapoint;
 import edu.pc3.sensoract.vpds.model.TaskletModel;
 import edu.pc3.sensoract.vpds.tasklet.Email;
 import edu.pc3.sensoract.vpds.tasklet.SMSGateway;
 import edu.pc3.sensoract.vpds.tasklet.TaskletScheduler;
 import edu.pc3.sensoract.vpds.util.JsonUtil;
-import edu.ucla.nesl.sensorsafe.db.StreamDatabaseDriver;
-import edu.ucla.nesl.sensorsafe.informix.InformixStreamDatabaseDriver;
+import edu.ucla.nesl.sensorsafe.db.informix.InformixDatabaseDriver;
+import edu.ucla.nesl.sensorsafe.db.informix.InformixStreamDatabaseDriver;
 import edu.ucla.nesl.sensorsafe.model.Channel;
 import edu.ucla.nesl.sensorsafe.model.Stream;
-import edu.ucla.nesl.sensorsafe.tools.Log;
 
 public class temp  extends SensorActAPI {
 	
@@ -41,7 +43,7 @@ public class temp  extends SensorActAPI {
 		
 		try {
 			//File file = Play.getFile(COMPUTED_PATH+filename);
-			FileReader fr = new FileReader(file);
+			//FileReader fr = new FileReader(file);
 			
 			FileInputStream fis = new FileInputStream(file);
 		    byte[] data = new byte[(int)file.length()];
@@ -114,6 +116,156 @@ public class temp  extends SensorActAPI {
 		}		
 	}
 	
+	static {
+		
+		try {
+			
+			System.out.println("connecting to Ifx.....");
+			InformixDatabaseDriver.initializeConnectionPool();
+			//InformixUserDatabaseDriver.initializeDatabase();
+			InformixStreamDatabaseDriver.initializeDatabase();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	// download one channel from ifx and upload into mongo
+	public void ifxDownload() {
+
+		//nesl_owner__NESL_Veris__Current__Current0Test
+		// first 4 2013-03-07 17:08:52.00000 2.108602523804
+		// count 8409837
+		
+		String username = "nesl_owner";
+		String device = "NESL_Veris";
+		String sensor = "Current";
+		String channel = "Current0Test";
+		
+		DateTime dtStart = new DateTime(2013, 10, 7, 0, 0);		
+		DateTime dtEnd =   new DateTime(2013, 11, 7, 0, 0);
+		
+		QueryDataOutputFormat data;
+		long start, end, time , total = 0;
+		
+		while(dtStart.getMillis() < dtEnd.getMillis()) {
+			
+			System.out.print("Fetching for " + dtStart.toString());
+			
+			start = dtStart.getMillis();
+			end = dtStart.plusDays(1).getMillis();
+			
+			data = DataArchiever.getDatapoints(username, device, sensor, channel, start, end, "");
+			//System.out.println(JsonUtil.json1.toJson(data));
+			System.out.println("  " + data.datapoints.size() + " datapoitns ");
+			System.out.print("Storing " + data.datapoints.size() + " datapoitns..");
+			
+			for (QueryDataOutputFormat.Datapoint dp : data.datapoints) {				
+				time = Long.parseLong(dp.time);
+				DBDatapoint.save(username, device, sensor, channel, time, dp.value);
+			}			
+			total = total + data.datapoints.size();
+			System.out.println(" done!       total " + total);
+			
+			dtStart = dtStart.plusDays(1);
+		}
+		
+		//System.out.println(JsonUtil.json1.toJson(data));
+		
+	}
+	
+	public void ifxTest() {
+		
+		String username = "samy";
+		String device = "device";
+		String sensor = "sensor";
+		String channel = "channel";
+		
+		DateTime start = DateTime.now();				
+		
+		for(int i=0; i<10; i++) {			
+			DateTime dt = start.plusMillis(i);
+			//Timestamp timeStamp = new Timestamp(dt.getMillis());			
+			DataArchiever.storeDatapoint(username, device, sensor, channel, dt.getMillis(), ""+(i*1.0));
+		}
+		
+		DateTime dtStart = start.plusMillis(0); 
+		DateTime dtEnd = start.plusMillis(10000000);
+		
+		System.out.println( DateTime.now().toString()+ " querying..");
+		QueryDataOutputFormat out = DataArchiever.getDatapoints(username, device, sensor, channel, 
+				dtStart.getMillis(), dtEnd.getMillis(), "" );
+		
+		System.out.println( DateTime.now().toString()+ " done..");
+		
+		String s1 = JsonUtil.json1.toJson(out);	
+		System.out.println(s1);
+	}
+	
+	
+	public String uname = "samy";
+	public String dsname = "test_channel";
+	
+	public void informix() {
+		List<Channel> chList  = new ArrayList<Channel>();		
+		chList.add(new Channel("ch1", "float"));
+
+		Stream st = new Stream(1, dsname, "tags", chList);
+		
+		try {
+			InformixStreamDatabaseDriver ifx = new InformixStreamDatabaseDriver();
+			ifx.createStream(uname, st);
+			ifx.close();
+		} catch(Exception e) {
+			System.out.println("Error create : " + e.getMessage());
+		}
+		
+		
+		try {
+			//Log.info(DateTime.now().toString() + " Inserting...");
+			DateTime start = DateTime.now();
+			
+			long t1 = DateTime.now().getMillis();
+			long t2 = DateTime.now().getMillis();
+			long t3 = DateTime.now().getMillis();
+			
+			DateTime iStart = start;
+			
+			InformixStreamDatabaseDriver ifx = new InformixStreamDatabaseDriver();
+			
+			int i=0;
+			while(true) {				
+				DateTime now = start.plusMillis(i++);				
+				Timestamp timeStamp = new Timestamp(now.getMillis());
+								
+				String d = "{\"timestamp\" : \"" + timeStamp.toString() + "\", \"tuple\" : [" + i + "]}"; 
+				//String d = "[\"" + timeStamp.toString() + "\", " + i + "]";
+				System.out.println(d);
+				ifx.addTuple(uname, dsname, d);
+				ifx.close();
+				
+				if(i%1000 == 0 ) {
+					t1 = DateTime.now().getMillis();					
+					iStart = now;
+					//Log.info(DateTime.now().toString() + " Querying...");					
+					String stt = new Timestamp(start.getMillis()).toString();
+					String ent = new Timestamp(t1).toString();					
+					t2 = DateTime.now().getMillis();
+					ifx.prepareQuery(uname, uname, dsname,  stt, ent, "", 0,0);
+					t3 = DateTime.now().getMillis();
+				}
+				break;
+			}
+			//renderJSON(obj);
+			
+		} catch(Exception e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+
+	}
+
+	
+	
 /*	
 	private static StreamDatabaseDriver streamDb;
 	
@@ -126,7 +278,6 @@ public class temp  extends SensorActAPI {
 			e.printStackTrace();
 		}
 	}
-
 	
 	public void informix() {
 		List<Channel> chList  = new ArrayList<Channel>();		

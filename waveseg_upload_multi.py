@@ -1,6 +1,7 @@
 import json,urllib,urllib2,subprocess,time,csv,sys,random
 
-url="http://128.97.93.30:9000/data/upload/wavesegment"
+url="http://localhost:9000/data/upload/wavesegment"
+#url="http://128.97.93.30:9000/data/upload/wavesegment"
 #url="http://localhost:8080/ws/upload"
 #url="http://sensoract-vpds.appspot.com/ws/upload"
 #url="http://192.168.17.11:9000/data/upload/wavesegment"
@@ -32,14 +33,14 @@ while 1:
 	readings_core0=[]
 	readings_core1=[]
 	obj["data"]["timestamp"]=time.time()
-	for x in range(0,9):
+	for x in range(0,0):
 		# readings_core0.append(random.randint(20,30))
-		readings_core0.append(count*2)
-		readings_core1.append(count*3)
+		readings_core0.append(1)
+		readings_core1.append(2)
 		# time.sleep(1)
 
-	readings_core0.append(count*2+10)
-	readings_core1.append(count*3+10)
+	readings_core0.append(1)
+	readings_core1.append(2)
 	
 	obj["data"]["channels"][0]["readings"]=readings_core0
 	obj["data"]["channels"][1]["readings"]=readings_core1
@@ -61,5 +62,5 @@ while 1:
 	if (count == 12):
 		count = 1;
 		
-	time.sleep(10)	
+	time.sleep(2)	
 

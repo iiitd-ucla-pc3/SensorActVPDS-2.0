@@ -40,18 +40,18 @@
  */
 
 package edu.pc3.sensoract.vpds.tasklet;
-
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.io.File;
 import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.List;
-import java.util.ArrayList;
 
+import org.apache.log4j.Logger;
 import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -73,6 +73,8 @@ public class TaskletScheduler {
 	public static Scheduler scheduler = null;
 	public static JobExecutionEventListener jobEventListener = null;
 
+	public static final Logger LOG = LuaToJavaFunctionMapper.LOG;
+	
 	public static int id = 100;
 
 	public static long tot_elapsed = 0;
@@ -240,8 +242,7 @@ public class TaskletScheduler {
 		try {
 			while (tokenizer.hasMoreTokens()) {
 				sensor = tokenizer.nextToken().trim();
-				DeviceId deviceId = new DeviceId(tasklet.secretkey,
-						tasklet.input.get(sensor));				
+				DeviceId deviceId = DeviceId.parseDeviceId(tasklet.input.get(sensor));				
 				result = SensorActAPI.deviceEvent.removeDeviceEventListener(deviceId,
 						jobDetail);
 			}
@@ -279,10 +280,24 @@ public class TaskletScheduler {
 		return true;
 	}
 
+	// add tasklet params and trigger the job
 	public static boolean triggerTasklet(final JobDetail job) {
 
 		try {
+			// TODO: Stateful Jobs are deprecated
+			// REF : http://stackoverflow.com/questions/2829731/update-an-existing-jobdatamap
+			// Update the event based tasklet parameters passed by the trigger 
+			//JobDataMap dataMap = job.getJobDataMap();
+			//dataMap.put("new key", "new value");
+			scheduler.addJob(job, true);
+						
+			// dataMap = scheduler.getJobDetail(job.getKey()).getJobDataMap();			
+			//System.out.println("data map after .......................");
+			//for(String k : dataMap.getKeys()) {
+			//				System.out.println(k + " " + dataMap.get(k));
+			//}			
 			scheduler.triggerJob(job.getKey());
+			
 		} catch (SchedulerException e) {
 			e.printStackTrace();
 			return false;
@@ -332,11 +347,11 @@ public class TaskletScheduler {
 		return false;
 	}
 
-	public static String scheduleTasklet(final String group,
+	public static String scheduleTasklet(final String username,
 			final TaskletModel tasklet) {
 
-		JobKey jobKey = new JobKey(tasklet.taskletname, group);
-		TriggerKey triggerKey = new TriggerKey(tasklet.taskletname, group);
+		JobKey jobKey = new JobKey(tasklet.taskletname, username);
+		TriggerKey triggerKey = new TriggerKey(tasklet.taskletname, username);
 
 		if (checkTaskletExists(jobKey)) {
 			return Const.TASKLET_ALREADY_SCHEDULED;
@@ -402,13 +417,12 @@ public class TaskletScheduler {
 			try {
 				while (tokenizer.hasMoreTokens()) {
 					sensor = tokenizer.nextToken().trim();
-					DeviceId deviceId = new DeviceId(tasklet.secretkey,
-							tasklet.input.get(sensor));
-					System.out.println("adding " + deviceId
-							+ " to DeviceEventListener");
+					DeviceId deviceId = DeviceId.parseDeviceId(tasklet.input.get(sensor));
+					LOG.info("Registering DeviceEventListener for " + deviceId);
+					
 					SensorActAPI.deviceEvent.addDeviceEventListener(deviceId,
 							deListener);
-					System.out.println("adding done..");
+					//System.out.println("adding done..");
 				}
 			} catch (Exception e) {
 			}

@@ -36,6 +36,7 @@ public class DeviceEvent extends Observable {
 	 * 
 	 * @param ws
 	 */
+	/*
 	public void notifyWaveSegmentArrived(WaveSegmentFormat ws) {
 
 		DeviceId deviceId = new DeviceId(ws.secretkey, ws.data.dname,
@@ -56,6 +57,28 @@ public class DeviceEvent extends Observable {
 			listener.deviceDataReceived(ws);
 		}
 	}
+	*/
+
+	// TODO: added new format of data notification
+	public void notifyDataArrived(String username, String device,
+			String sensor, String channel, long timestamp, String value) {
+
+		DeviceId deviceId = new DeviceId(username, device, sensor, channel);		
+		DataUpload.LOG.info("Data received | " + deviceId.toString() + " " + timestamp + " " + value);
+
+		ArrayList<DeviceEventListener> listListener = mapListeners.get(deviceId
+				.toString());
+		if (null == listListener)
+			return;
+
+		//DataUpload.LOG.info("notifyWaveSegmentArrived.. Listeners "
+			//	+ listListener.size() + "\n");
+
+		for (DeviceEventListener listener : listListener) {
+			DataUpload.LOG.info("Notifying | " + deviceId + "'s listener "  + listener.getJobDetail().getKey().toString());			
+			listener.deviceDataReceived(deviceId, timestamp, value);
+		}
+	}
 
 	/**
 	 * 
@@ -65,8 +88,9 @@ public class DeviceEvent extends Observable {
 	public void addDeviceEventListener(DeviceId deviceId,
 			DeviceEventListener newListener) {
 
-		System.out.println("addDeviceEventListener.. DeviceId "
-				+ deviceId.toString());
+		//System.out.println("addDeviceEventListener.. DeviceId "
+			//	+ deviceId.toString());
+		
 		ArrayList<DeviceEventListener> listListener = mapListeners.get(deviceId
 				.toString());
 
@@ -78,10 +102,8 @@ public class DeviceEvent extends Observable {
 
 		ArrayList<DeviceEventListener> listListener1 = mapListeners
 				.get(deviceId.toString());
-
-		System.out.println("addDeviceEventListener.. Listener count "
-				+ listListener1.size());
-
+		
+		TaskletScheduler.LOG.info("Total #registered listeners "+ listListener1.size());
 	}
 
 	/**

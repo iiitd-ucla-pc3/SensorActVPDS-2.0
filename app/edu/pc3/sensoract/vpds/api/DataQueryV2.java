@@ -53,6 +53,7 @@ import edu.pc3.sensoract.vpds.api.request.DataQueryFormat;
 import edu.pc3.sensoract.vpds.api.response.QueryDataOutputFormat;
 import edu.pc3.sensoract.vpds.api.response.QueryDataOutputFormat.Datapoint;
 import edu.pc3.sensoract.vpds.constants.Const;
+import edu.pc3.sensoract.vpds.data.DataArchiever;
 import edu.pc3.sensoract.vpds.enums.ErrorType;
 import edu.pc3.sensoract.vpds.exceptions.InvalidJsonException;
 import edu.pc3.sensoract.vpds.guardrule.GuardRuleManager;
@@ -167,6 +168,8 @@ public class DataQueryV2 extends SensorActAPI {
 			if ((end + "").length() == 10) {
 				end = end * 1000;
 			}
+			
+			System.out.println("Query " + start + "  " + end + " "+ DBDatapoint.getCollectionName(username, device,sensor, channel) );
 
 			// TODO: get data through guard rule engine
 			List<DBDatapoint> dataPoints = DBDatapoint.fetch(username, device,
@@ -194,9 +197,38 @@ public class DataQueryV2 extends SensorActAPI {
 					out.datapoints.add(new Datapoint(time, dp.value));
 				}
 			}
-
 			return out;
+			
 		} catch (Exception e) {			
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// modified data/query which pass through guard rule engine
+	public static QueryDataOutputFormat readDataIfx(String secretkey,
+			String device, String sensor, String channel, long start, long end,
+			String timeformat) {
+
+		try {
+
+			String username = null;
+			username = userProfile.getUsername(secretkey);
+			if (null == username) {
+				response.sendFailure(Const.API_DATA_QUERY,
+						ErrorType.UNREGISTERED_SECRETKEY, secretkey);
+			}
+			if ((start + "").length() == 10) {
+				start = start * 1000;
+			}
+
+			if ((end + "").length() == 10) {
+				end = end * 1000;
+			}
+			System.out.println("Query " + start + "  " + end + " "+ DBDatapoint.getCollectionName(username, device,sensor, channel) );
+			return DataArchiever.getFromIfx(username, device, sensor, channel, start, end, timeformat);			
+		} catch (Exception e) {			
+			e.printStackTrace();
 			return null;
 		}
 	}
@@ -216,7 +248,7 @@ public class DataQueryV2 extends SensorActAPI {
 
 		try {
 			validateRequest();
-			QueryDataOutputFormat out = readDataNew(secretkey, device, sensor,
+			QueryDataOutputFormat out = readDataIfx(secretkey, device, sensor,
 					channel, start, end, timeformat);
 			renderJSON(out);
 		} catch (Exception e) {

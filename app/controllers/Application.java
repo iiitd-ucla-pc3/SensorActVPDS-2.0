@@ -62,7 +62,20 @@ public class Application extends Controller {
 		// System.out.println("key is : " +
 		// request.headers.get("x-key").value());
 	}
+	
+	@Before(unless = {"/"})
+	static void sslOrRedirect() {
 
+		// skip https for localhost
+		if(request.getBase().toString().contains("localhost"))
+			return;
+		
+		// force to use https on other domains e.g. google app engine
+		if (!request.secure) {
+			redirect("https://" + request.host + request.url);
+		}
+	}
+	
 	public static void index() {		
 		renderText("Welcome to SensorAct!");
 	}
@@ -231,7 +244,7 @@ public class Application extends Controller {
 		final String XAPIKEY = "x-apikey";
 		
 		for(String k : request.headers.keySet()) {
-			System.out.println(request.headers.get(k).name);
+		//	System.out.println(request.headers.get(k).name);
 		}
 		
 		String secretkey = null;
@@ -241,7 +254,7 @@ public class Application extends Controller {
 			renderText("Unregistered secretkey");
 		}
 		
-		System.out.println("secretkey " + secretkey + " " + start + " " + end);
+		//System.out.println("secretkey " + secretkey + " " + start + " " + end);
 		SensorActAPI.dataQueryv2.doProcess(secretkey, device, sensor, channel, start, end, timeformat);
 	}
 
@@ -274,7 +287,7 @@ public class Application extends Controller {
 		if(request.headers.containsKey(XAPIKEY)) {
 			secretkey =  request.headers.get(XAPIKEY).value();
 		} else {
-			renderText("Unregistered secretkey");
+			renderText("Invalid apikey");
 		}
 
 		SensorActAPI.dataUpload.doProcess(secretkey, device, sensor, channel, time, value);
@@ -321,6 +334,9 @@ public class Application extends Controller {
 	public static void test() throws Exception {
 		
 		new temp().loadComputedSensors();
+		
+		//new temp().ifxTest();		
+		//new temp().ifxDownload();
 		
 		renderText("done!");
 	}

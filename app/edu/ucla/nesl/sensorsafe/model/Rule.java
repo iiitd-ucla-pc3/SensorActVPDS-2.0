@@ -10,10 +10,14 @@ import javax.xml.bind.annotation.XmlRootElement;
 import com.wordnik.swagger.annotations.ApiModel;
 import com.wordnik.swagger.annotations.ApiModelProperty;
 
-@ApiModel(value = "Rule definition.")
+@ApiModel(value = "Rule")
 @XmlRootElement(name = "rule")
 public class Rule {
-
+	
+	@XmlElement(name = "id")
+	@ApiModelProperty(value = "Unique id for this rule.")
+	public int id;
+	
 	@XmlElement(name = "targetUsers")
 	@ApiModelProperty(value = "List of user names for this rule to be applied. If null, always applied.")
 	public List<String> targetUsers;
@@ -23,7 +27,7 @@ public class Rule {
 	public List<String> targetStreams;
 	
 	@XmlElement(name = "condition")
-	@ApiModelProperty(value = "Rule condition.", required = true)
+	@ApiModelProperty(value = "Rule condition.")
 	@NotNull
 	public String condition;
 	
@@ -34,7 +38,8 @@ public class Rule {
 	
 	public Rule() {}
 	
-	public Rule(Object[] targetUsers, Object[] targetStreams, String condition, String action) {
+	public Rule(int id, Object[] targetUsers, Object[] targetStreams, String condition, String action) {
+		this.id = id;
 		if (targetUsers != null)  {
 			this.targetUsers = new LinkedList<String>();
 			for (Object user: targetUsers) {

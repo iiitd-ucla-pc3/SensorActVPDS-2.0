@@ -40,14 +40,12 @@
  */
 package edu.pc3.sensoract.vpds.api;
 
-import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
 
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 import play.Play;
 import play.libs.WS;
@@ -58,12 +56,6 @@ import edu.pc3.sensoract.vpds.constants.Const;
 import edu.pc3.sensoract.vpds.data.DataArchiever;
 import edu.pc3.sensoract.vpds.enums.ErrorType;
 import edu.pc3.sensoract.vpds.exceptions.InvalidJsonException;
-import edu.pc3.sensoract.vpds.model.DBDatapoint;
-import edu.pc3.sensoract.vpds.model.WaveSegmentModel;
-import edu.ucla.nesl.sensorsafe.db.StreamDatabaseDriver;
-import edu.ucla.nesl.sensorsafe.informix.InformixStreamDatabaseDriver;
-import edu.ucla.nesl.sensorsafe.model.Channel;
-import edu.ucla.nesl.sensorsafe.model.Stream;
 
 /**
  * Device data upload API: Uploads channel readings sent by a device to
@@ -203,6 +195,17 @@ public class DataUpload extends SensorActAPI {
 
 	}
 
+	public final void storeDataPoint(String username, String device, String sensor,
+			String channel, long time, String value) {
+		
+		// convert into millis
+		if((time+"").length() == 10) {
+			time = time * 1000;
+		}		
+		DataArchiever.storeDatapoint(username, device, sensor, channel, time, value);
+		deviceEvent.notifyDataArrived(username, device, sensor, channel, time, value);
+
+	}
 		
 	/**
 	 * Store the wave segment to the repository.
@@ -222,10 +225,19 @@ public class DataUpload extends SensorActAPI {
 					ErrorType.UNREGISTERED_SECRETKEY, waveSegment.secretkey);				
 		}
 		
+		if(waveSegment.data.dname.contains("Motion") || waveSegment.data.dname.contains("Door")) {
+			;
+		} else {
+			return;
+		}
+		
 		String device = waveSegment.data.dname;
 		String sensor = waveSegment.data.sname;
-		long timestamp = waveSegment.data.timestamp;
+						
+		//long timestamp = waveSegment.data.timestamp;
+		long timestamp = DateTime.now().getMillis();
 		
+		// TODO: handle ISO8601 timestamp
 		//System.out.println(timestamp);		
 		if((timestamp+"").length() == 10) {
 			timestamp = timestamp * 1000;
@@ -234,14 +246,19 @@ public class DataUpload extends SensorActAPI {
 		
 		for(WaveSegmentFormat.Channels ch : waveSegment.data.channels) {			
 			for(Double d : ch.readings) {
-				DataArchiever.storeDatapoint(username, device, sensor, ch.cname, timestamp, d.toString());
+				// for informix
+				//String data = d.toString();
+				//if(data.length() > 10) {
+					//data = data.substring(0,10);
+				//}				
+				storeDataPoint(username, device, sensor, ch.cname, timestamp, d.toString());
 			}
 		}
 		
 		// System.out.println(System.currentTimeMillis()/1000 + " "
 		// + waveSegment.data.sid + " notifing... " +
 		// waveSegment.data.timestamp);
-		deviceEvent.notifyWaveSegmentArrived(waveSegment);
+		//deviceEvent.notifyWaveSegmentArrived(waveSegment);
 		// System.out.println(System.currentTimeMillis()/1000 + " "
 		// + waveSegment.data.sid + " notified...");
 
@@ -281,7 +298,12 @@ public class DataUpload extends SensorActAPI {
 			String channel, String timestamp, String value) {
 		try {
 			
-			validateRequest(secretkey, device, sensor, channel, timestamp, value);
+			//TODO
+			//validateRequest(secretkey, device, sensor, channel, timestamp, value);
+		
+			// bypass key validataion
+		 secretkey = Play.configuration
+					.getProperty(Const.OWNER_OWNERKEY);
 			
 			String username = null;
 			if (userProfile.isRegisteredSecretkey(secretkey)) {
@@ -293,7 +315,8 @@ public class DataUpload extends SensorActAPI {
 			
 			long time = Long.parseLong(timestamp);
 			
-			DataArchiever.storeDatapoint(username, device, sensor, channel, time, value);
+			
+			storeDataPoint(username, device, sensor, channel, time, value);
 			
 			//deviceEvent.notifyWaveSegmentArrived(waveSegment);
 

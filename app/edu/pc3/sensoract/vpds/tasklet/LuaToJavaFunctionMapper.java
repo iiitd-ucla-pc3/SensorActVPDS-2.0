@@ -41,7 +41,8 @@
 
 package edu.pc3.sensoract.vpds.tasklet;
 
-import java.io.FileReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -55,11 +56,9 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Hours;
 import org.joda.time.Minutes;
-import org.joda.time.Period;
 import org.quartz.JobExecutionContext;
 
 import play.Play;
-import edu.pc3.sensoract.vpds.api.DataQueryV2;
 import edu.pc3.sensoract.vpds.api.SensorActAPI;
 import edu.pc3.sensoract.vpds.api.response.QueryDataOutputFormat;
 import edu.pc3.sensoract.vpds.data.DataArchiever;
@@ -120,10 +119,10 @@ public class LuaToJavaFunctionMapper {
 		// + jobContext.getJobDetail().getJobDataMap().get("email") + " "
 		// + new Date().getTime());
 
-		long t1 = new Date().getTime();
+		//long t1 = new Date().getTime();
 		// System.out.println("before notifyEmail..." + new Date().getTime());
 		email.sendNow(jobContext);
-		long t2 = new Date().getTime();
+		//long t2 = new Date().getTime();
 		// System.out.print(" notifyEmail :" + (t2-t1));
 		// System.out.println("after notifyEmail..." + new Date().getTime());
 	}
@@ -170,25 +169,24 @@ public class LuaToJavaFunctionMapper {
 			dd.sensor = tokenizer.nextToken();
 			dd.channel = tokenizer.nextToken();
 		} catch (Exception e) {
-		}		
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at toDeviceInfo " + e.fillInStackTrace() );
+			return null;
+		}
+		
 		return dd;
 	}
 
 	// read past nSeconds data
 	public Map read(String resource, int nSeconds) {
 
-		DeviceInfo device = toDeviceInfo(resource);		
-		String secretkey = SensorActAPI.userProfile.getSecretkey(device.username);
+		DeviceInfo device = toDeviceInfo(resource);
 		
-		//device.username = SensorActAPI.userProfile.getOwnername();
-		//String email = SensorActAPI.userProfile.getEmail(SensorActAPI.userProfile.getOwnername());
-		//RequestingUser requestingUser = new RequestingUser(email);
-
 		//long timeNow = new Date().getTime();
 		long timeNow = DateTime.now(DateTimeZone.UTC).getMillis();
 
 		QueryDataOutputFormat data = 
-		DataQueryV2.readDataNew(secretkey, device.device, device.sensor, device.channel, 
+				DataArchiever.getDatapoints(device.username, device.device, device.sensor, device.channel, 
 				timeNow-nSeconds*1000, timeNow, null);
 		
 		return toMap(data);
@@ -245,13 +243,8 @@ public class LuaToJavaFunctionMapper {
 			int end, int nSeconds, String function) {
 		
 		DeviceInfo device = toDeviceInfo(resource);
-		String secretkey = null;		
+
 		try {
-				//System.out.println("after.......................");
-				secretkey = SensorActAPI.userProfile.getSecretkey(device.username);
-				
-				if(secretkey == null) 
-					return Double.NaN;
 			
 			//long timeNow = new Date().getTime();
 			long timeNow = DateTime.now(DateTimeZone.UTC).getMillis();
@@ -264,7 +257,7 @@ public class LuaToJavaFunctionMapper {
 				ch = channel + start;
 				
 				//System.out.println("Reading .. " + ch);				
-				QueryDataOutputFormat data = DataQueryV2.readDataNew(secretkey, device.device, 
+				QueryDataOutputFormat data = DataArchiever.getDatapoints(device.username, device.device, 
 						device.sensor, ch, 
 						timeNow-nSeconds*1000, timeNow, null);
 				
@@ -280,7 +273,8 @@ public class LuaToJavaFunctionMapper {
 			return agg;
 			
 		} catch(Exception e) {
-			LOG.error("readAll "+e.getLocalizedMessage());
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at readAll " + e.fillInStackTrace() );						
 			e.printStackTrace();
 			return Double.NaN;
 		}		
@@ -291,16 +285,11 @@ public class LuaToJavaFunctionMapper {
 		DeviceInfo device = toDeviceInfo(resource);
 		String secretkey = null;
 		try {
-				//System.out.println("after.......................");
-				secretkey = SensorActAPI.userProfile.getSecretkey(device.username);
-				
-				if(secretkey == null) 
-					return Double.NaN;
-			
+
 			//long timeNow = new Date().getTime();
 			long timeNow = DateTime.now(DateTimeZone.UTC).getMillis();
 			
-			QueryDataOutputFormat data = DataQueryV2.readDataNew(secretkey, device.device, 
+			QueryDataOutputFormat data = DataArchiever.getDatapoints(device.username, device.device, 
 					device.sensor, device.channel, 
 					timeNow-nSeconds*1000, timeNow, null);
 
@@ -312,12 +301,37 @@ public class LuaToJavaFunctionMapper {
 			return val;
 			
 		} catch(Exception e) {			
-			LOG.error("read " + e.getLocalizedMessage());
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at read " + e.fillInStackTrace() );						
 			e.printStackTrace();
 			return Double.NaN;
 		}
 	}
 
+	public Double read(String resource, long startTime, long endTime, String function) {		
+		DeviceInfo device = toDeviceInfo(resource);		
+		try {
+
+			QueryDataOutputFormat data = DataArchiever.getDatapoints(device.username, device.device, 
+					device.sensor, device.channel, 
+					startTime, endTime, null);
+
+			double val = compute(data, function);
+			
+			//System.out.println("Sending email.. ");
+			//sendTestEmail("Average is " + (sum/count));			
+			//System.out.println("Returning.. " + val);
+			return val;
+			
+		} catch(Exception e) {			
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at read " + e.fillInStackTrace() );						
+			e.printStackTrace();
+			return Double.NaN;
+		}
+	}
+
+	
 	public String plot(String resource, int nSeconds) {
 		return plot(resource, nSeconds, "");
 	}
@@ -336,7 +350,7 @@ public class LuaToJavaFunctionMapper {
 			//long timeNow = new Date().getTime();
 			long timeNow = DateTime.now(DateTimeZone.UTC).getMillis();
 			
-			QueryDataOutputFormat data = DataQueryV2.readDataNew(secretkey, device.device, 
+			QueryDataOutputFormat data = DataArchiever.getDatapoints(device.username, device.device, 
 					device.sensor, device.channel, 
 					timeNow-nSeconds*1000, timeNow, null);
 			
@@ -346,7 +360,9 @@ public class LuaToJavaFunctionMapper {
 			//sendTestEmail("Average is " + (sum/count));			
 			//System.out.println("Returning.. " + val);
 		} catch(Exception e) {			
-			LOG.error("plot " + e.getLocalizedMessage());
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at plot " + e.fillInStackTrace() );						
+			e.printStackTrace();
 			return null;
 		}
 	}
@@ -354,13 +370,18 @@ public class LuaToJavaFunctionMapper {
 	
 	public String getEmailList() {		
 		try {
-			String filename = Play.applicationPath.getPath() + "/conf/email.list.txt";		
-			FileReader fr = new FileReader(filename);
-			char []buf= new char[1024];
-			fr.read(buf); 
-			return new String(buf);
+			String filename = Play.applicationPath.getPath() + "/conf/email.list.txt";
+			
+			File file =  new File(filename);			
+			FileInputStream fis = new FileInputStream(file);
+		    byte[] data = new byte[(int)file.length()];
+		    fis.read(data);		    
+		    String s = new String(data, "UTF-8");			
+			return s;
 		} catch(Exception e) {
-			LOG.error("getEmailList " + e.getMessage());			
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at getEmailList " + e.fillInStackTrace() );						
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -371,8 +392,7 @@ public class LuaToJavaFunctionMapper {
 	
 	public boolean email(String to, String subject, String msg, String attachment) {
 		
-		try{
-		
+		try{		
 			if(to==null || to.length() == 0) {
 				to = getEmailList();
 			}			
@@ -384,21 +404,29 @@ public class LuaToJavaFunctionMapper {
 				email.sendNow(jobContext);					
 			}						
 		}catch(Exception e) {
-			LOG.error("email " + e.getMessage());
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at email " + e.fillInStackTrace() );						
+			e.printStackTrace();
 			return false;
 		}		
 		return true;
 	}
-
+	
 	public String getSMSnos() {		
 		try {
-			String filename = Play.applicationPath.getPath() + "/conf/sms.nos.txt";		
-			FileReader fr = new FileReader(filename);
-			char []buf= new char[1024];
-			fr.read(buf); 
-			return new String(buf);
+			String filename = Play.applicationPath.getPath() + "/conf/sms.nos.txt";
+			
+			File file =  new File(filename);			
+			FileInputStream fis = new FileInputStream(file);
+		    byte[] data = new byte[(int)file.length()];
+		    fis.read(data);		    
+		    String s = new String(data, "UTF-8");
+			 
+			return s;
 		} catch(Exception e) {
-			LOG.error("getSMSnos " + e.getMessage());			
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at getSMSnos " + e.fillInStackTrace() );						
+			e.printStackTrace();						
 		}
 		return null;
 	}
@@ -418,8 +446,9 @@ public class LuaToJavaFunctionMapper {
 				SMSGateway.sendSMS(context, to, msg);	
 			}				
 		}catch(Exception e) {
-			LOG.error("sms " + e.getMessage());
-			e.printStackTrace();
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at sms " + e.fillInStackTrace() );						
+			e.printStackTrace();						
 			return false;
 		}		
 		return true;
@@ -462,16 +491,37 @@ public class LuaToJavaFunctionMapper {
 				//	device.channel, timeNow+"", data+"");
 			
 			DataArchiever.storeDatapoint(device.username, device.device, device.sensor, device.channel, timeNow, data+"");
-
 			
-		} catch(Exception e) {
-			LOG.error("writeData " + e.getMessage());
+		} catch(Exception e) {			
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at writeData " + e.fillInStackTrace() );						
+			e.printStackTrace();						
+			return false;
+		}		
+		return true;
+	}
+	
+	public boolean writeData(String resource, long time, double data) {		
+		try {
+			DeviceInfo device = toDeviceInfo(resource);
+			//WaveSegmentFormat ws = makeWaveSegment(device, data);
+			
+			//SensorActAPI.dataUpload.doProcess(secretkey, device.device, device.sensor, 
+				//	device.channel, timeNow+"", data+"");
+			
+			DataArchiever.storeDatapoint(device.username, device.device, device.sensor, device.channel, time, data+"");
+			
+		} catch(Exception e) {			
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at writeData " + e.fillInStackTrace() );						
+			e.printStackTrace();						
 			return false;
 		}
 		
 		return true;
 	}
-	
+
+
 	/**
 	 * Reads wave segments from 'fromTime' to current time
 	 * 
