@@ -202,7 +202,7 @@ public class Const {
 	public static final int SECRETKEY_MAX_LENGTH = 32;
 
 	public static final int DEVICENAME_MIN_LENGTH = 2;
-	public static final int DEVICENAME_MAX_LENGTH = 20;
+	public static final int DEVICENAME_MAX_LENGTH = 50;
 
 	public static final int TEMPLATENAME_MIN_LENGTH = 2;
 	public static final int TEMPLATENAME_MAX_LENGTH = 20;
@@ -223,16 +223,16 @@ public class Const {
 	public static final int SAMPLING_PERIOD_MAX_VALUE = 60;
 
 	public static final int DEVICEPROFILENAME_MIN_LENGTH = 2;
-	public static final int DEVICEPROFILENAME_MAX_LENGTH = 20;
+	public static final int DEVICEPROFILENAME_MAX_LENGTH = 50;
 
 	public static final int SENSORNAME_MIN_LENGTH = 2;
-	public static final int SENSORNAME_MAX_LENGTH = 20;
+	public static final int SENSORNAME_MAX_LENGTH = 50;
 
 	public static final int SENSORID_MIN_VALUE = 1;
 	public static final int SENSORID_MAX_VALUE = 1000;
 
 	public static final int CHANNELNAME_MIN_LENGTH = 1;
-	public static final int CHANNELNAME_MAX_LENGTH = 20;
+	public static final int CHANNELNAME_MAX_LENGTH = 50;
 
 	public static final int CHANNELTYPE_MIN_LENGTH = 2;
 	public static final int CHANNELTYPE_MAX_LENGTH = 20;
