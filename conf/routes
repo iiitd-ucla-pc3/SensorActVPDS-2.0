@@ -58,14 +58,14 @@ POST    /tasklet/cancel                         Application.taskletCancel
 GET      /c1                         Application.computedSensor1
         
 POST    /data/query                             Application.dataQuery
-GET     /{<[a-zA-Z_-]+[a-zA-Z0-9]{1,50}>device}/{<[a-zA-Z_-]+[a-zA-Z0-9]{1,50}>sensor}/{<[a-zA-Z_+]+[a-zA-Z0-9]{1,50}>channel} Application.dataQueryV2
+GET     /{<[a-zA-Z][-a-zA-Z0-9_]{1,49}>device}/{<[a-zA-Z][-a-zA-Z0-9_]{1,49}>sensor}/{<[a-zA-Z][-a-zA-Z0-9_]{1,49}>channel} Application.dataQueryV2
 
 POST    /upload/wavesegment                     Application.dataUploadWaveSegment
 POST    /data/upload/wavesegment                Application.dataUploadWaveSegment
 
 # PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}  Application.putDeviceData
 # PUT     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor} Application.putDeviceSensorData
-PUT     /{<[a-zA-Z_-]+[a-zA-Z0-9]{1,50}>device}/{<[a-zA-Z_-]+[a-zA-Z0-9]{1,50}>sensor}/{<[a-zA-Z_-]+[a-zA-Z0-9]{1,50}>channel} Application.putDeviceSensorChannelData
+PUT     /{<[a-zA-Z][-a-zA-Z0-9_]{1,49}>device}/{<[a-zA-Z][-a-zA-Z0-9_]{1,49}>sensor}/{<[a-zA-Z][-a-zA-Z0-9_]{1,49}>channel} Application.putDeviceSensorChannelData
 #PUT     /{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z_]+[a-zA-Z0-9]{1,20}>channel}/{<[0-9]{13,14}>time}/{<[0-9]{1,10}>value} Application.putDeviceSensorChannelData
 
 #GET     /device/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>device}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>sensor}/{<[a-zA-Z]+[a-zA-Z0-9]{1,20}>channel} Application.getDeviceSensorChannelData

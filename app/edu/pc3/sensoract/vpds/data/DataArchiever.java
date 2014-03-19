@@ -204,8 +204,8 @@ public class DataArchiever {
 			String device, String sensor, String channel, long start, long end,
 			String timeformat ) {
 		
-		//return getFromMongo(username, device, sensor, channel, start, end, timeformat);
-		return getFromIfx(username, device, sensor, channel, start, end, timeformat);
+		return getFromMongo(username, device, sensor, channel, start, end, timeformat);
+		//return getFromIfx(username, device, sensor, channel, start, end, timeformat);
 	}
 	
 }
