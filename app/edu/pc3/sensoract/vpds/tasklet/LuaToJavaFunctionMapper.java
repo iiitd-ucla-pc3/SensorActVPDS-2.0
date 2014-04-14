@@ -395,7 +395,6 @@ public class LuaToJavaFunctionMapper {
 			return null;
 		}
 	}
-
 	
 	public String getEmailList() {		
 		try {
@@ -667,7 +666,26 @@ public class LuaToJavaFunctionMapper {
 		// " total: "+ (t3 - t1));
 
 		return false;
+	}
+	
+	public String cachePut(String key, String value) {
+		String taskletId = jobContext.getJobDetail().getKey().toString();		
+		return TaskletCache.put(taskletId, key, value);
+	}
+	
+	public String cacheGet(String key) {
+		String taskletId = jobContext.getJobDetail().getKey().toString();
+		return TaskletCache.get(taskletId, key);
+	}
 
+	public String cacheRemove(String key) {
+		String taskletId = jobContext.getJobDetail().getKey().toString();
+		return TaskletCache.remove(taskletId, key);
+	}
+
+	public void cacheRemoveAll() {
+		String taskletId = jobContext.getJobDetail().getKey().toString();
+		TaskletCache.removePrefixAll(taskletId);
 	}
 
 }

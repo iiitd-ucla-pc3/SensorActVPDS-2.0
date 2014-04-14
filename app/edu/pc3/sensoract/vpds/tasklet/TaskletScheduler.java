@@ -267,6 +267,7 @@ public class TaskletScheduler {
 			boolean status = scheduler.deleteJob(jobKey);
 			if (status == true) {					
 				removeDeviceListeners(jobDetail);
+				TaskletCache.removePrefixAll(taskletid);
 			}
 			return status;
 		} catch (SchedulerException e) {
