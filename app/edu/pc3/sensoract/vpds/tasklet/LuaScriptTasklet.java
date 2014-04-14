@@ -129,9 +129,17 @@ public class LuaScriptTasklet implements InterruptableJob {
 		}
 		
 		try {
-			ScriptEngine luaEngineLocal = new ScriptEngineManager().getEngineByName("Lua");
+			//ScriptEngine luaEngineLocal = new ScriptEngineManager().getEngineByName("Lua");
+			
+			ScriptEngine luaEngineLocal = new ScriptEngineManager().getEngineByName("Lua");			
+			// check which scripting language
+			if(tasklet.execute.startsWith("# python") || tasklet.execute.startsWith("#python")) {
+				luaEngineLocal = new ScriptEngineManager().getEngineByName("python");
+				LOG.info(jobKey.toString() + " python script identified..." );
+			}
+			
 			LuaToJavaFunctionMapper luaToJavaFunctionMapper = new LuaToJavaFunctionMapper(context);
-			luaEngineLocal.put(VPDS, luaToJavaFunctionMapper);
+			//luaEngineLocal.put(VPDS, luaToJavaFunctionMapper);
 			
 			// Object email = dataMap.get("email");
 
@@ -154,6 +162,8 @@ public class LuaScriptTasklet implements InterruptableJob {
 
 			// luaEngine.put("PDS", LuaJavaMapper.class);
 			// luaEngine.put("email", email);
+			
+			newScope.put(VPDS, luaToJavaFunctionMapper);
 			
 			newScope.putAll(tasklet.input);
 			newScope.putAll(tasklet.param);
@@ -188,6 +198,7 @@ public class LuaScriptTasklet implements InterruptableJob {
 			luaEngineLocal.eval(tasklet.execute, newScope);			
 			long e2 = new Date().getTime();
 			// System.out.print(" eval : " + (e2 - e1));
+			
 
 			// System.out.println("e1:" + e1 + " e2:"+e2);
 			// System.out.println("script done..");
@@ -210,7 +221,7 @@ public class LuaScriptTasklet implements InterruptableJob {
 		//			+ " #threads: " + ccount);
 			// System.out.println( key.getName() + ": " + (e2 - t1) + " " +
 			// ccount);
-			TaskletScheduler.updateElapsed((e2 - t1));
+			//TaskletScheduler.updateElapsed((e2 - t1));
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

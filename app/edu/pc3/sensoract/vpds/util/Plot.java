@@ -25,7 +25,7 @@ import edu.pc3.sensoract.vpds.tasklet.LuaToJavaFunctionMapper;
 public class Plot {
 
 	// create a plot, save it and send the file name
-	public static String createPlot(Map<String, String> data, String title,
+	public static String createPlot(Map<Long, Double> data, String title,
 			String unit) {
 
 		if (data == null || data.isEmpty()) {
@@ -43,13 +43,14 @@ public class Plot {
 		Date time;
 		double val;
 
-		for (String key : data.keySet()) {
+		for (Long key : data.keySet()) {
 			
 			//System.out.println("adding..." + key);
-			epoch = Long.parseLong(key);
+			epoch = key.longValue();
 			time = new Date(epoch);
 			
-			val = Double.parseDouble(data.get(key));
+			//val = Double.parseDouble(data.get(key));
+			val = data.get(key);
 			ts.addOrUpdate(new Millisecond(time), val);
 			
 		}

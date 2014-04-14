@@ -63,7 +63,7 @@ public class Application extends Controller {
 		// request.headers.get("x-key").value());
 	}
 	
-	@Before(unless = {"/"})
+	//@Before(unless = {"/"})
 	static void sslOrRedirect() {
 
 		// skip https for localhost

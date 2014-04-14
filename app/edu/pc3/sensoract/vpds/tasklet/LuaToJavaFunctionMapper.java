@@ -43,11 +43,13 @@ package edu.pc3.sensoract.vpds.tasklet;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -138,15 +140,20 @@ public class LuaToJavaFunctionMapper {
 		System.out.println("after notifyEmail..." + new Date().getTime());
 	}
 	
-	Map<String,String> toMap(QueryDataOutputFormat data) {
+	Map<Long,Double> toMap(QueryDataOutputFormat data) {
 
+		Map<Long,Double> map = new LinkedHashMap<Long,Double>();
+		
+		List<Double> list = new ArrayList<Double>(map.values());
+		
+		// always return an empty map
 		if (null == data || null == data.datapoints)
-			return null;
-
-		Map<String,String> map = new LinkedHashMap<String,String>();
+			return map;
+		
 		for (QueryDataOutputFormat.Datapoint dp : data.datapoints) {
-			map.put(dp.time, dp.value);
+			map.put(Long.parseLong(dp.time), Double.parseDouble(dp.value));
 		}
+		
 		return map;
 	}
 	
@@ -308,10 +315,32 @@ public class LuaToJavaFunctionMapper {
 		}
 	}
 
+	public Map read(String resource, long startTime, long endTime) {
+		
+		DeviceInfo device = toDeviceInfo(resource);		
+		
+		try {
+			QueryDataOutputFormat data = DataArchiever.getDatapoints(device.username, device.device, 
+					device.sensor, device.channel, 
+					startTime, endTime, null);
+
+			return toMap(data);
+			
+			//System.out.println("Sending email.. ");
+			//sendTestEmail("Average is " + (sum/count));			
+			//System.out.println("Returning.. " + val);
+			
+		} catch(Exception e) {			
+			String context = jobContext.getJobDetail().getKey().toString();
+			LOG.error(context + " Error at read " + e.fillInStackTrace() );						
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 	public Double read(String resource, long startTime, long endTime, String function) {		
 		DeviceInfo device = toDeviceInfo(resource);		
 		try {
-
 			QueryDataOutputFormat data = DataArchiever.getDatapoints(device.username, device.device, 
 					device.sensor, device.channel, 
 					startTime, endTime, null);

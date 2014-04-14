@@ -112,5 +112,6 @@
 	<classpathentry kind="lib" path="lib/ifxjdbcx.jar"/>
 	<classpathentry kind="lib" path="lib/fscontext.jar"/>
 	<classpathentry kind="lib" path="lib/providerutil.jar"/>
+	<classpathentry kind="lib" path="lib/jython.jar"/>
 	<classpathentry kind="output" path="eclipse/classes"/>
 </classpath>

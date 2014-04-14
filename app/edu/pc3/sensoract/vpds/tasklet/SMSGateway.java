@@ -65,7 +65,6 @@ public class SMSGateway {
 			Sms message = messageFactory.create(params);
 
 			LOG.info(context + " " + NAME + " " + message.getStatus());
-
 		} catch (Exception e) {
 			LOG.error(context + " " + NAME + " Error " + e.getMessage());
 		}

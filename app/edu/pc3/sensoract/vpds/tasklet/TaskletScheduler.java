@@ -67,6 +67,7 @@ import org.quartz.impl.matchers.GroupMatcher;
 import edu.pc3.sensoract.vpds.api.SensorActAPI;
 import edu.pc3.sensoract.vpds.constants.Const;
 import edu.pc3.sensoract.vpds.model.TaskletModel;
+import edu.pc3.sensoract.vpds.model.TaskletType;
 
 public class TaskletScheduler {
 
@@ -236,6 +237,11 @@ public class TaskletScheduler {
 		TaskletModel tasklet = (TaskletModel) dataMap
 				.get(LuaScriptTasklet.TASKLETINFO);
 
+		// remove the event listeners only for EVENT based tasklet
+		if(tasklet == null || tasklet.tasklet_type != TaskletType.EVENT) {
+			return false;
+		}
+		
 		String sensor = null;
 		boolean result = false;
 		StringTokenizer tokenizer = new StringTokenizer(tasklet.when, "||");

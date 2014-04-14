@@ -120,10 +120,10 @@ public class temp  extends SensorActAPI {
 		
 		try {
 			
-			System.out.println("connecting to Ifx.....");
-			InformixDatabaseDriver.initializeConnectionPool();
-			//InformixUserDatabaseDriver.initializeDatabase();
-			InformixStreamDatabaseDriver.initializeDatabase();
+			//System.out.println("connecting to Ifx.....");
+			//InformixDatabaseDriver.initializeConnectionPool();
+			////InformixUserDatabaseDriver.initializeDatabase();
+			//InformixStreamDatabaseDriver.initializeDatabase();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
